@@ -48,7 +48,7 @@ h3 {
 # Load data
 @st.cache_data
 def load_data():
-    path = Path("/workspaces/AM1_topic_modelling/data/dashboard/dashboard_data.csv")
+    path = Path("/workspaces/AM1_topic_modelling/data/evaluation_outputs/dashboard_data.csv")
     return pd.read_csv(path, parse_dates=["date"])
 
 df = load_data()

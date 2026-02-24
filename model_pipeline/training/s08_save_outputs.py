@@ -186,19 +186,19 @@ def save_run_outputs(
     # 6) Save evaluation outputs if provided
     if coherence_df is not None:
         _write_df_csv(coherence_df, run_dir / "evaluation" / "coherence_sweep.csv")
-        _write_df_csv(coherence_df, PROJECT_ROOT / "data" / "Interrim" / "coherence_sweep.csv")
+        _write_df_csv(coherence_df, PROJECT_ROOT / "data" / "evaluation_outputs" / "coherence_sweep.csv")
 
     if stability_df is not None:
         _write_df_csv(stability_df, run_dir / "evaluation" / "stability_seeds.csv")
-        _write_df_csv(stability_df, PROJECT_ROOT / "data" / "Interrim" / "stability_seeds.csv")
+        _write_df_csv(stability_df, PROJECT_ROOT / "data" / "evaluation_outputs" / "stability_seeds.csv")
 
     # 7) Backward-compatible: if someone already wrote them elsewhere, copy into run
     _copy_if_exists(
-        PROJECT_ROOT / "data" / "Interrim" / "coherence_sweep.csv",
+        PROJECT_ROOT / "data" / "evaluation_outputs" / "coherence_sweep.csv",
         run_dir / "evaluation" / "coherence_sweep.csv",
     )
     _copy_if_exists(
-        PROJECT_ROOT / "data" / "Interrim" / "stability_seeds.csv",
+        PROJECT_ROOT / "data" / "evaluation_outputs" / "stability_seeds.csv",
         run_dir / "evaluation" / "stability_seeds.csv",
     )
 

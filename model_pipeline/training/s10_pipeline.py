@@ -12,8 +12,13 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import yaml
+
 logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+with open(PROJECT_ROOT / "config.yaml") as _f:
+    CONFIG = yaml.safe_load(_f)
 
 
 def main() -> None:
@@ -35,7 +40,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     logging.getLogger("gensim").setLevel(logging.WARNING)
 
-    dataset_name = "full_retro"
+    dataset_name = CONFIG["data"]["dataset_name"]
     run_name = make_run_id()
     run_dir = RUNS_DIR / run_name
     logger.info("Pipeline run_name=%s", run_name)
@@ -45,7 +50,13 @@ def main() -> None:
     df = run_cleaning(df)
     df = run_spacy_processing(df)
     vec_out = run_vectorisation(df)
-    nmf_out = train_nmf(vec_out.X)
+    nmf_out = train_nmf(
+        vec_out.X,
+        n_topics=CONFIG["nmf"]["n_topics"],
+        random_state=CONFIG["nmf"]["random_state"],
+        init=CONFIG["nmf"]["init"],
+        max_iter=CONFIG["nmf"]["max_iter"],
+    )
 
     # S06: analysis-ready dataset
     df_alloc = run_topic_allocation(df, nmf_model=nmf_out.nmf_model, vectorizer=vec_out.vectorizer)
@@ -57,10 +68,17 @@ def main() -> None:
         X=vec_out.X,
         feature_names=vec_out.feature_names,
         texts_tokens=df["tokens_final"].tolist(),
-        topic_range=range(5, 80, 5),
-        n_top_words=10,
+        topic_range=range(*CONFIG["evaluation"]["coherence_topic_range"]),
+        n_top_words=CONFIG["evaluation"]["n_top_words"],
+        random_state=CONFIG["nmf"]["random_state"],
+        init=CONFIG["nmf"]["init"],
+        max_iter=CONFIG["nmf"]["max_iter"],
     )
-    stab_df = evaluate_topic_stability(X=vec_out.X)
+    stab_df = evaluate_topic_stability(
+        X=vec_out.X,
+        n_topics=CONFIG["nmf"]["n_topics"],
+        seeds=CONFIG["evaluation"]["stability_seeds"],
+    )
 
     # S08: persist artifacts + evaluation csvs
     save_run_outputs(
