@@ -1,244 +1,134 @@
-#######################
-# Imports
 import streamlit as st
 import pandas as pd
 import altair as alt
-import plotly.express as px
 from pathlib import Path
 
-#######################
-# Page config
 st.set_page_config(
-    page_title="Public Conversations on Education",
-    page_icon="📊",
+    page_title="Education Policy Observatory",
+    page_icon="🔭",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 alt.themes.enable("dark")
 
-#######################
-# CSS styling
 st.markdown("""
 <style>
-
-[data-testid="block-container"] {
-    padding: 1.5rem 2rem;
-}
-
+[data-testid="block-container"] { padding: 1.5rem 2rem; }
 [data-testid="stMetric"] {
     background-color: #2b2b2b;
     text-align: center;
     padding: 18px 0;
     border-radius: 6px;
 }
-
-[data-testid="stMetricLabel"] {
-    justify-content: center;
-}
-
-h3 {
-    margin-bottom: 0.5rem;
-}
-
+[data-testid="stMetricLabel"] { justify-content: center; }
+h3 { margin-bottom: 0.5rem; }
 </style>
 """, unsafe_allow_html=True)
 
-#######################
-# Load data
+ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = ROOT / "data" / "evaluation_outputs" / "dashboard_data.csv"
+
+
 @st.cache_data
-def load_data():
-    path = Path("/workspaces/AM1_topic_modelling/data/evaluation_outputs/dashboard_data.csv")
-    return pd.read_csv(path, parse_dates=["date"])
+def load_data() -> pd.DataFrame:
+    df = pd.read_csv(DATA_PATH, parse_dates=["date"])
+    df["country"] = "England"
+    df["topic_name"] = df["topic_name"].str.replace("_", " ").str.title()
+    df["source"] = df["source"].str.upper()
+    return df
+
 
 df = load_data()
 
-#######################
-# Sidebar
-with st.sidebar:
-    st.title("📊 Education Policy Dashboard")
+# ── Header ────────────────────────────────────────────────────────────────────
+st.title("Education Policy Observatory")
+st.caption("Tracking who shapes the education policy conversation, and how.")
 
-    selected_sources = st.multiselect(
-        "Organisation",
-        options=sorted(df["source"].unique()),
-        default=sorted(df["source"].unique())
-    )
-
-    selected_topics = st.multiselect(
-        "Topic",
-        options=sorted(df["topic_name"].unique()),
-        default=sorted(df["topic_name"].unique())
-    )
-
-    selected_period = st.multiselect(
-        "Election period",
-        options=df["election_period"].unique(),
-        default=df["election_period"].unique()
-    )
-
-df_filt = df[
-    df["source"].isin(selected_sources)
-    & df["topic_name"].isin(selected_topics)
-    & df["election_period"].isin(selected_period)
-]
-
-#######################
-# Header
-st.title("Mapping the Public Conversation on Education")
-st.caption(
-    "Tracking attention, agenda shifts, and organisational focus in education policy discourse (2023–2025)."
+st.info(
+    "**Data note:** ~69% of articles are from SchoolsWeek (education journalism). "
+    "All charts offer a **normalised view** to make sources with very different "
+    "volumes directly comparable.",
+    icon="ℹ️",
 )
 
-#######################
-# Layout
-col = st.columns((1.4, 4.6, 2), gap="large")
+st.divider()
 
-# =====================
-# LEFT COLUMN — METRICS
-# =====================
-with col[0]:
-    st.subheader("Agenda snapshot")
+# ── KPI cards ─────────────────────────────────────────────────────────────────
+k1, k2, k3, k4 = st.columns(4)
+k1.metric("Total articles", f"{len(df):,}")
+k2.metric("Topics", df["topic_name"].nunique())
+k3.metric("Organisations", df["source"].nunique())
+k4.metric(
+    "Date range",
+    f"{df['date'].dt.year.min()}–{df['date'].dt.year.max()}",
+)
 
-    st.metric("Articles", len(df_filt))
-    st.metric("Topics", df_filt["topic_name"].nunique())
-    st.metric("Organisations", df_filt["source"].nunique())
+st.divider()
 
-    st.divider()
+# ── Top topics + source breakdown ─────────────────────────────────────────────
+c1, c2 = st.columns(2)
 
-    st.subheader("Election shift")
+with c1:
+    st.subheader("Top 10 topics")
+    normalise = st.toggle("Normalise (% of corpus)", key="norm_topics")
 
-    rank = (
-        df_filt
-        .groupby(["election_period", "topic_name"])
-        .size()
-        .reset_index(name="n")
-    )
-
-    if {"pre_election", "post_election"} <= set(rank["election_period"]):
-        pivot = rank.pivot(
-            index="topic_name",
-            columns="election_period",
-            values="n"
-        ).fillna(0)
-
-        pivot["rank_pre"] = pivot["pre_election"].rank(ascending=False)
-        pivot["rank_post"] = pivot["post_election"].rank(ascending=False)
-        pivot["rank_change"] = pivot["rank_pre"] - pivot["rank_post"]
-
-        top_mover = pivot.sort_values("rank_change", ascending=False).head(1)
-
-        st.metric(
-            "Biggest riser",
-            top_mover.index[0].replace("_", " ").title(),
-            f"+{int(top_mover['rank_change'].iloc[0])}"
+    if normalise:
+        counts = (
+            df["topic_name"].value_counts(normalize=True)
+            .mul(100).round(1).head(10).reset_index()
         )
+        counts.columns = ["topic_name", "value"]
+        x_title = "% of corpus"
     else:
-        st.info("Select both pre- and post-election periods.")
+        counts = df["topic_name"].value_counts().head(10).reset_index()
+        counts.columns = ["topic_name", "value"]
+        x_title = "Articles"
 
-# =====================
-# CENTRE COLUMN — TRENDS
-# =====================
-with col[1]:
-    st.subheader("Topic attention over time")
-
-    top_topics = (
-        df_filt["topic_name"]
-        .value_counts()
-        .head(6)
-        .index
+    st.altair_chart(
+        alt.Chart(counts).mark_bar(color="#4e79a7").encode(
+            x=alt.X("value:Q", title=x_title),
+            y=alt.Y("topic_name:N", sort="-x", title=""),
+            tooltip=["topic_name", alt.Tooltip("value:Q", title=x_title)],
+        ).properties(height=320),
+        use_container_width=True,
     )
 
-    time_df = (
-        df_filt[df_filt["topic_name"].isin(top_topics)]
-        .groupby(["date", "topic_name"])
-        .size()
-        .reset_index(name="n_articles")
+with c2:
+    st.subheader("Articles by organisation")
+    src = df.groupby(["source", "type"]).size().reset_index(name="count")
+    st.altair_chart(
+        alt.Chart(src).mark_bar().encode(
+            x=alt.X("count:Q", title="Articles"),
+            y=alt.Y("source:N", sort="-x", title=""),
+            color=alt.Color("type:N", legend=alt.Legend(title="Type")),
+            tooltip=["source", "type", "count"],
+        ).properties(height=320),
+        use_container_width=True,
     )
 
-    line = alt.Chart(time_df).mark_line(interpolate="monotone").encode(
-        x=alt.X("date:T", title="Month"),
-        y=alt.Y("n_articles:Q", title="Articles"),
-        color=alt.Color("topic_name:N", legend=alt.Legend(title="Topic")),
-        tooltip=["topic_name", "n_articles"]
-    ).properties(height=320)
+st.divider()
 
-    election_line = alt.Chart(
-        pd.DataFrame({"date": [pd.Timestamp("2024-07-01")]})
-    ).mark_rule(
-        strokeDash=[4, 4],
-        strokeWidth=2,
-        color="white"
-    ).encode(x="date:T")
-
-    st.altair_chart(line + election_line, use_container_width=True)
-
-    st.divider()
-
-    st.subheader("Organisational focus (heatmap)")
-
-    heat_df = (
-        df_filt
-        .groupby(["source", "topic_name"])
-        .size()
-        .reset_index(name="n_articles")
-    )
-
-    heatmap = alt.Chart(heat_df).mark_rect().encode(
-        y=alt.Y("source:N", title="Organisation"),
-        x=alt.X("topic_name:N", title="Topic"),
-        color=alt.Color(
-            "n_articles:Q",
-            scale=alt.Scale(scheme="magma"),
-            title="Articles"
-        ),
-        tooltip=["source", "topic_name", "n_articles"]
-    ).properties(height=300)
-
-    st.altair_chart(heatmap, use_container_width=True)
-
-# =====================
-# RIGHT COLUMN — DETAIL
-# =====================
-with col[2]:
-    st.subheader("Top topics")
-
-    top_topics_df = (
-        df_filt["topic_name"]
-        .value_counts()
-        .head(10)
-        .reset_index()
-    )
-    top_topics_df.columns = ["Topic", "Articles"]
-
-    st.dataframe(
-        top_topics_df,
-        hide_index=True,
-        use_container_width=True
-    )
-
-    st.divider()
-
-    st.subheader("Article explorer")
-
-    selected_topic = st.selectbox(
-        "Topic",
-        df_filt["topic_name"].unique()
-    )
-
-    subset = df_filt[df_filt["topic_name"] == selected_topic]
-
-    selected_id = st.selectbox(
-        "Article",
-        subset["article_id"].values
-    )
-
-    text = subset.loc[
-        subset["article_id"] == selected_id,
-        "text_clean"
-    ].iloc[0]
-
-    st.text_area(
-        "Cleaned article text",
-        text,
-        height=350
-    )
+# ── Navigation guide ──────────────────────────────────────────────────────────
+st.subheader("Explore the Observatory")
+n1, n2, n3, n4 = st.columns(4)
+n1.info(
+    "**Topic Explorer**\n\n"
+    "Browse all 30 topics, view top keywords, read articles, "
+    "and examine topic contestability scores."
+)
+n2.info(
+    "**Trends Over Time**\n\n"
+    "Monthly topic attention with election marker and "
+    "pre/post election rank shift table."
+)
+n3.info(
+    "**Organisation Analysis**\n\n"
+    "Source × topic heatmap and organisation-type breakdowns. "
+    "Filter by type and country."
+)
+n4.info(
+    "**Framing Analysis**\n\n"
+    "How different organisations frame the same topics "
+    "using predefined framing keyword sets."
+)
