@@ -204,6 +204,10 @@ All current data is England. A `country = "England"` column is added at load tim
 
 ## 13. Corpus Imbalance — Limitations and Retraining Considerations
 
+### Date Range — Why 2023–2025
+
+The 2023–2025 range was chosen to ensure the model captures the full spectrum of education policy discourse across distinct political periods, including pre- and post-election shifts around July 2024. This three-year window provides sufficient volume (~4,000 articles) for stable topic extraction via NMF while reflecting the longitudinal scope needed for comparative policy analysis. A narrower window would risk missing topic vocabulary that only surfaces during specific political moments, weakening the model's ability to label incoming 2026 articles against a representative baseline.
+
 ### The Problem
 SchoolsWeek (~69% of corpus) means: (1) TF-IDF vocabulary reflects journalistic language; (2) NMF topic boundaries reflect how journalists categorise education policy; (3) articles from EPI/Nuffield are assigned topics learned from a vocabulary that doesn't match their register.
 

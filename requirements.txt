@@ -117,3 +117,5 @@ webencodings==0.5.1
 websocket-client==1.9.0
 wrapt==2.0.1
 gensim
+supabase
+python-dotenv
