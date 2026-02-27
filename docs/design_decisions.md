@@ -202,7 +202,30 @@ All current data is England. A `country = "England"` column is added at load tim
 
 ---
 
-## 13. Corpus Imbalance — Limitations and Retraining Considerations
+## 13. Source Attribution — Considering Organisation Type Over Name
+
+### Decision Under Consideration
+Removing individual organisation names from analysis outputs and replacing them with category types only (e.g. `ed_journalism`, `think_tank`, `gov_inst`, `prof_body`, `ed_res_org`).
+
+### Rationale
+
+**Methodologically, this is how NMF at scale actually works.** When the model processes 3,972 documents, it extracts latent topic patterns across the entire corpus. The model does not "know" it is reading a SchoolsWeek article versus a GOV.UK press release — it sees a bag of weighted terms and assigns topic probabilities. Source metadata is added back in at the analysis stage. The unit of analysis is the document-topic relationship, not the author-text relationship.
+
+This is methodologically distinct from a traditional literature review, where you read and cite specific texts by specific named authors. The pipeline is closer to how large-scale language modelling works: hoovering up text to learn patterns, not to attribute or reproduce individual pieces.
+
+**This strengthens the governance argument.** A core claim of AtlasED is that AI tools encode assumptions that require governance. Surfacing organisation types rather than named organisations makes this argument more legible — it shows that the model is identifying structural patterns in discourse (how journalism, think tanks, and government bodies frame education policy differently) rather than profiling individual outlets. The governance question becomes "what assumptions are baked into the category schema?" which is a more tractable and productive question than "what does SchoolsWeek publish?"
+
+**It also reduces copyright and attribution sensitivity.** Displaying category-level analysis rather than source-level analysis moves further from anything that could be construed as reproducing or substituting for named publications.
+
+### Trade-off
+Organisation names are retained internally (in Supabase and pipeline outputs) for data quality, deduplication, and future retraining decisions. Only the public-facing dashboard and website would show category types. Named source breakdown remains available as an internal/researcher view.
+
+### Status
+Under consideration. Not yet implemented.
+
+---
+
+## 14. Corpus Imbalance — Limitations and Retraining Considerations
 
 ### Date Range — Why 2023–2025
 
@@ -222,7 +245,7 @@ SchoolsWeek (~69% of corpus) means: (1) TF-IDF vocabulary reflects journalistic 
 
 ---
 
-## 14. Examiner Q&A Preparation — Dashboard & Corpus
+## 15. Examiner Q&A Preparation — Dashboard & Corpus
 
 **Q: Why did you build a multi-page dashboard instead of a single page?**
 A: Different users need different views. A single page forces all audiences to scroll through irrelevant content. Streamlit's `pages/` convention lets each analytical question have its own focused surface without code duplication — shared data loading is cached and reused across pages.
@@ -250,7 +273,7 @@ A: The dashboard's target audience — researchers and policy analysts — has n
 
 ---
 
-## 15. Examiner Q&A Preparation — Model & Algorithm
+## 16. Examiner Q&A Preparation — Model & Algorithm
 
 ### Model & Algorithm
 
