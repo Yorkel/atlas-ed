@@ -11,21 +11,30 @@
 ## Technical — Secondary
 
 - [ ] **Fix URLs in scraping repo** — 2,992 training articles in Supabase have `url = NULL`, meaning they can't be matched back to topic assignments in future runs. Investigate why the scraping pipeline didn't write URLs and fix it.
+- [ ] **Remove `text_clean` from public API/dashboard** — The `text_clean` column contains full article text. Do not expose it via the public API endpoint or display it in the dashboard. For internal pipeline use only.
 - [ ] **Optional: drift monitoring** — Write `drift_monitor.py` + create `drift_metrics` table in Supabase to track topic distribution shift over inference batches (KL/JS divergence, OOV rate, confidence degradation).
 
-## Governance — Do Now (in parallel with technical work)
+## SchoolsWeek & Copyright — Do Now
+
+- [ ] **Email SchoolsWeek editor** — Brief email explaining this is UCL non-commercial research, what the project does, and asking for written permission to store and analyse their articles. They often say yes to academic use and written permission protects you. Contact via the editor form on their site.
+- [ ] **Confirm ethics application covers scraping** — Check your submitted ethics application explicitly mentions automated scraping of SchoolsWeek. If not, submit an amendment to `ioe.researchethics@ucl.ac.uk`.
+- [ ] **Audit dashboard and website for article text** — Confirm neither the Streamlit dashboard nor the AtlasED website displays full or partial article text. Only topic labels, trends, charts, and URLs linking back to originals are acceptable without explicit permission.
+
+## UCL Governance — Do Now (in parallel with technical work)
 
 - [ ] **IP ownership — PRIORITY** — Email `innovationpolicy@ucl.ac.uk` to confirm whether apprenticeship outputs are staff IP (owned by UCL) or researcher-owned. This affects the validity of the existing MIT licence. Do this this week.
-- [ ] **ISD cloud approval** — Email `researchdata-support@ucl.ac.uk` asking whether Supabase, Railway, and Streamlit Community Cloud are acceptable for a non-personal research data project. Ask a direct yes/no question. Do this this week.
+- [ ] **ISD cloud approval** — Email `researchdata-support@ucl.ac.uk` asking whether Supabase, Railway, and Streamlit Community Cloud are acceptable for a non-personal research data project. Ask a direct yes/no. Do this this week.
 
-## Governance — Before Public Launch
+## UCL Governance — Before Public Launch
 
-- [ ] **Ethics confirmation** — Confirm ethics approval covers scraping of SchoolsWeek (commercial publication). Contact `ioe.researchethics@ucl.ac.uk` if unclear.
-- [ ] **UCL branding sign-off** — Consult `brand.comms@ucl.ac.uk` before using UCL Grand Challenges branding on a public-facing site.
+- [ ] **UCL branding decision** — Decide whether to launch with or without UCL Grand Challenges branding. Launching without is simpler and avoids needing sign-off. If using UCL branding, contact `brand.comms@ucl.ac.uk` first.
+- [ ] **AI use disclaimer** — Add a visible note on the site and dashboard: "Analysis produced using NMF topic modelling. This is a research tool, not an official UCL publication." UCL requires AI use to be explicitly acknowledged in outputs.
+- [ ] **Privacy/cookie notice** — If the website or dashboard collects any user data (analytics, contact forms, newsletter), add a privacy notice and cookie banner. If purely read-only with no user input, this is minimal.
 - [ ] **Worktribe registration** — Register the project to trigger formal departmental approvals.
 - [ ] **Data Management Plan** — Complete via DMPonline: https://dmponline.dcc.ac.uk/
+- [ ] **Register dataset** — Record the dataset in the UCL Research Data Repository (Figshare): https://rdr.ucl.ac.uk/
 
 ## Out of Scope (Separate Repos)
 
 - Sentiment analysis pipeline
-- AtlasED public website
+- AtlasED public website (separate repo — see `docs/website_plan.md`)
