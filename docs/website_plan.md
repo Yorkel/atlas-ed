@@ -45,7 +45,9 @@ Methodology and transparency. How the model works, what its limitations are, wha
 This is also where the AI use disclaimer lives prominently.
 
 ### Explorer (Dashboard Embed or Link)
-The Streamlit dashboard embedded or linked. Users can explore topic trends, contestability, election period analysis, source comparisons.
+The Streamlit dashboard embedded or linked. Users can explore topic trends, contestability analysis, election period shifts, and source comparisons.
+
+The contestability score (normalised Shannon entropy) is a key feature — it quantifies how certain or uncertain the model is about each article's topic assignment. This directly supports the governance argument: the system shows users where it is confident and where it is guessing, rather than presenting every output with equal authority. See `docs/design_decisions.md` Section 15 for the full rationale.
 
 **Important:** The explorer only shows analysis outputs — topic labels, trends, charts, URLs linking back to original articles. No article text is displayed.
 
@@ -59,19 +61,21 @@ The destination the whole site builds toward. Information about co-design worksh
 | Shown | Not Shown |
 |---|---|
 | Topic trend charts | Full article text |
-| Contestability scores | Article excerpts or quotes |
+| Contestability scores and distributions | Article excerpts or quotes |
 | Topic distributions by source | Raw scraped data |
 | Pre/post election comparisons | Any personal data |
+| Drift monitoring summary (model health) | Internal model artefacts |
 | URLs linking back to SchoolsWeek originals | |
 | Methodology and model limitations | |
 
 ---
 
-## Technical Stack (Planned)
+## Technical Stack (Current)
 
 - Static site (Next.js or similar) — separate repo
 - Streamlit dashboard embedded via iframe or linked
-- No database — reads from published analysis outputs or directly from Supabase (read-only, anonymised views)
+- Data source: Supabase (PostgreSQL) — read-only queries for topic assignments, contestability scores, drift metrics
+- FastAPI inference API deployed on Render (`https://atlased-api.onrender.com`) — production target: Cloud@UCL (pending approval)
 - Minimal or no user data collection
 
 ---

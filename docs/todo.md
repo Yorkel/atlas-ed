@@ -5,8 +5,8 @@
 - [x] **Dockerise FastAPI** — `Dockerfile`, `.dockerignore`, `requirements-api.txt` created and tested locally.
 - [x] **Deploy FastAPI (interim)** — Deployed to Render free tier: `https://atlased-api.onrender.com`. Health and predict endpoints verified.
 - [ ] **Deploy FastAPI to Cloud@UCL (production)** — Request access to Cloud@UCL (AWS or Azure), redeploy Docker image. Blocked on UCL approval (see `docs/uclcheck.md`).
-- [ ] **Write `batch_runner.py`** — Calls the deployed FastAPI `/predict` endpoint for each inference article, writes results back to Supabase (`dataset_type = "inference"`).
-- [ ] **Run inference backfill** — Process the synthetic weekly datasets (Jan 2019 → Feb 2020) through the batch runner.
+- [x] **Write `batch_runner.py`** — Calls the deployed FastAPI `/predict` endpoint for each inference article, writes results back to Supabase (`dataset_type = "inference"`).
+- [x] **Run inference backfill** — 128 articles across 6 weeks (Jan 9 → Feb 20, 2026) processed successfully.
 - [ ] **Migrate Streamlit dashboard to Supabase** — Replace CSV reads with Supabase queries across all 5 pages.
 - [ ] **Deploy Streamlit dashboard** — Push to Streamlit Community Cloud. Hold the public URL until ISD approval is received.
 
@@ -14,7 +14,7 @@
 
 - [ ] **Fix URLs in scraping repo** — 2,992 training articles in Supabase have `url = NULL`, meaning they can't be matched back to topic assignments in future runs. Investigate why the scraping pipeline didn't write URLs and fix it.
 - [ ] **Remove `text_clean` from public API/dashboard** — The `text_clean` column contains full article text. Do not expose it via the public API endpoint or display it in the dashboard. For internal pipeline use only.
-- [ ] **Optional: drift monitoring** — Write `drift_monitor.py` + create `drift_metrics` table in Supabase to track topic distribution shift over inference batches (KL/JS divergence, OOV rate, confidence degradation).
+- [x] **Drift monitoring** — `drift_monitor.py` written, `drift_metrics` table created in Supabase. Tracks JS divergence, confidence, contestability, topic concentration (HHI) per inference week. See `docs/drift_monitor.md`.
 
 ## SchoolsWeek & Copyright — Do Now
 

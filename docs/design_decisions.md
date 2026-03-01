@@ -342,7 +342,38 @@ SchoolsWeek (~69% of corpus) means: (1) TF-IDF vocabulary reflects journalistic 
 
 ---
 
-## 17. Examiner Q&A Preparation — Dashboard & Corpus
+## 17. Drift Monitoring — Design & Metric Choices
+
+### Overview
+
+The drift monitor (`model_pipeline/inference/drift_monitor.py`) compares each inference week's topic assignments against the training baseline. It computes six metrics per week and writes them to the `drift_metrics` table in Supabase. Full documentation is in `docs/drift_monitor.md`.
+
+### Why these metrics
+
+| Metric | Why chosen |
+|---|---|
+| JS divergence | Measures overall topic distribution shift. Preferred over KL divergence because it handles zero-probability topics (inevitable with 20 articles and 30 topics). |
+| Mean confidence | Direct measure of whether the model is less certain on new data. A sustained drop indicates vocabulary drift. |
+| Mean contestability | Entropy trend at the system level — complements the per-article contestability score. |
+| High-contestability rate | Fraction of articles the model genuinely struggles with. More actionable than a mean. |
+| Topic concentration (HHI) | Captures both "missing topics" and "over-concentration" in one number. Standard measure from market concentration analysis. |
+| Topics present | Simple count — with small weekly batches, low coverage is expected, but sustained absence of specific topics is a signal. |
+
+### Why not OOV rate or reconstruction error
+
+Both would require loading the fitted vectorizer and NMF model. The drift monitor is designed to work from Supabase data only — no model artefacts needed. This keeps it simple and deployable independently. OOV and reconstruction error could be added to the API as a `/diagnostics` endpoint in future.
+
+### Alert design
+
+Alerts are informational `logger.warning()` messages plus boolean columns in the database. They do not halt the pipeline, send notifications, or trigger retraining. The human decides what to do. This matches the project's responsible AI principle: the system surfaces information for human judgement rather than automating decisions.
+
+### Initial results (6 weeks, 128 articles)
+
+Confidence is stable (no alert). JS divergence and topic coverage are elevated but explained by small sample sizes (17–28 articles per week). Contestability is marginally higher on inference data — worth monitoring over time.
+
+---
+
+## 18. Examiner Q&A Preparation — Dashboard & Corpus
 
 **Q: Why did you build a multi-page dashboard instead of a single page?**
 A: Different users need different views. A single page forces all audiences to scroll through irrelevant content. Streamlit's `pages/` convention lets each analytical question have its own focused surface without code duplication — shared data loading is cached and reused across pages.
@@ -370,7 +401,7 @@ A: The dashboard's target audience — researchers and policy analysts — has n
 
 ---
 
-## 18. Examiner Q&A Preparation — Model & Algorithm
+## 19. Examiner Q&A Preparation — Model & Algorithm
 
 ### Model & Algorithm
 
