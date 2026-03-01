@@ -249,7 +249,9 @@ data/
 # Credentials
 credentials.json
 
-experiments/outputs/
+# Ignore experiment outputs except trained model runs (needed by Docker/API)
+experiments/outputs/*
+!experiments/outputs/runs/
 
 # MLflow local tracking (file-based)
 experiments/mlruns/

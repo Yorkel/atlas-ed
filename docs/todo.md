@@ -2,7 +2,8 @@
 
 ## Technical — Critical Path
 
-- [ ] **Deploy FastAPI** — Write `Dockerfile`, push image to Railway or Fly.io. Everything below is blocked until a live API URL exists.
+- [x] **Dockerise FastAPI** — `Dockerfile`, `.dockerignore`, `requirements-api.txt` created and tested locally.
+- [ ] **Deploy FastAPI to Cloud@UCL** — Request access to Cloud@UCL (AWS or Azure), push Docker image to a container service (AWS App Runner / ECS or Azure Container Apps). Blocked on UCL approval (see `docs/uclcheck.md`).
 - [ ] **Write `batch_runner.py`** — Calls the deployed FastAPI `/predict` endpoint for each inference article, writes results back to Supabase (`dataset_type = "inference"`).
 - [ ] **Run inference backfill** — Process the synthetic weekly datasets (Jan 2019 → Feb 2020) through the batch runner.
 - [ ] **Migrate Streamlit dashboard to Supabase** — Replace CSV reads with Supabase queries across all 5 pages.
@@ -23,7 +24,7 @@
 ## UCL Governance — Do Now (in parallel with technical work)
 
 - [ ] **IP ownership — PRIORITY** — Email `innovationpolicy@ucl.ac.uk` to confirm whether apprenticeship outputs are staff IP (owned by UCL) or researcher-owned. This affects the validity of the existing MIT licence. Do this this week.
-- [ ] **ISD cloud approval** — Email `researchdata-support@ucl.ac.uk` asking whether Supabase, Railway, and Streamlit Community Cloud are acceptable for a non-personal research data project. Ask a direct yes/no. Do this this week.
+- [ ] **Cloud@UCL access** — Email `isd.cloud@ucl.ac.uk` requesting access to AWS or Azure via Cloud@UCL for container deployment + database. Also ask whether Supabase is acceptable. See `docs/uclcheck.md` for full details.
 
 ## UCL Governance — Before Public Launch
 
