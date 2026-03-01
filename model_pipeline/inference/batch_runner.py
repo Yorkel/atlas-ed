@@ -178,16 +178,21 @@ def build_payloads(predictions: list[dict], run_id: str) -> list[dict]:
 # ── Step 4: Write results back to Supabase ───────────────────────────────────
 
 def upsert_results(client: Client, payloads: list[dict]) -> int:
-    """Upsert prediction results in chunks. Returns number of failed rows."""
+    """Update prediction results row by row. Returns number of failed rows.
+
+    Uses .update().eq() instead of .upsert() because the articles table has a
+    NOT NULL constraint on `url`, and inference payloads don't include url.
+    Upsert treats missing columns as NULL, triggering the constraint.
+    """
     failed = 0
-    for i in range(0, len(payloads), CHUNK_SIZE):
-        chunk = payloads[i : i + CHUNK_SIZE]
+    for payload in payloads:
+        row_id = payload["id"]
+        update_data = {k: v for k, v in payload.items() if k != "id"}
         try:
-            client.table("articles").upsert(chunk).execute()
+            client.table("articles").update(update_data).eq("id", row_id).execute()
         except Exception as e:
-            failed_ids = [p["id"] for p in chunk]
-            logger.error("Upsert chunk failed (%d rows): %s\n  IDs: %s", len(chunk), e, failed_ids[:5])
-            failed += len(chunk)
+            logger.error("Update failed for %s: %s", row_id, e)
+            failed += 1
     return failed
 
 
