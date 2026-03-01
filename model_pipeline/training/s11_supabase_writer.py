@@ -57,11 +57,22 @@ def get_supabase_client() -> Client:
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _compute_contestability(row: pd.Series) -> float:
+    """
+    Normalised Shannon entropy across all topic weights.
+    0.0 = all weight on one topic (certain).
+    1.0 = uniform distribution (maximum uncertainty).
+
+    Replaces the gap-based metric (1 - (top - second)) which was
+    structurally broken with 30 topics — NMF spreads weight so thinly
+    that every article scored 0.9+ regardless of actual certainty.
+    """
     weights = row[TOPIC_COLS].values.astype(float)
-    sorted_w = np.sort(weights)[::-1]
-    if len(sorted_w) < 2:
-        return 0.0
-    return float(1.0 - (sorted_w[0] - sorted_w[1]))
+    weights = np.maximum(weights, 1e-12)
+    total = weights.sum()
+    probs = weights / total
+    h = -np.sum(probs * np.log(probs))
+    max_h = np.log(len(probs)) if len(probs) > 0 else 1.0
+    return float(round(h / max_h, 6))
 
 
 def _build_topic_probabilities(row: pd.Series) -> dict:

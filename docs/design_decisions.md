@@ -206,13 +206,19 @@ SchoolsWeek accounts for ~69% of the corpus. **Decision:** Surface this explicit
 ### Framing Analysis — Why Keyword Matching, Not a New Model
 Framing types are defined as keyword lists at the top of the page file. Each article is assigned the framing whose keywords appear most in `text_clean`. A separate classifier would require labelled training data that doesn't exist. Keyword matching is transparent, auditable, and inspectable — appropriate for a contestability analysis.
 
-### Contestability Score
-Derived from the W matrix (all 30 topic weights per article):
+### Contestability Score — Why Entropy Replaced the Gap Metric
+
+The original contestability metric (`1 - (top_weight - second_weight)`) measured the gap between the top two topic weights. This is structurally broken with 30 topics: NMF spreads weight so thinly that even a clearly dominant topic might score 0.12 while the runner-up scores 0.08 — producing a contestability of 0.96. Every article scores 0.9+, making the metric meaningless.
+
+The replacement is **normalised Shannon entropy** across all 30 topic weights:
 ```
-contestability_score = 1 - (dominant_topic_weight - second_highest_topic_weight)
+H = -Σ p_i * log(p_i)
+contestability_score = H / log(n_topics)
 ```
-Score near 1 = model is uncertain between two topics = assignment is contestable.
-Score near 0 = model is certain = robust assignment.
+- Score near 0 = all weight on one topic = confident, robust assignment.
+- Score near 1 = weight spread uniformly = high uncertainty, genuinely contested.
+
+Entropy measures the shape of the entire distribution, not just the top two. This produces a meaningful spread: articles dominated by one theme score low, articles spanning multiple policy framings score high. Normalising by `log(n_topics)` keeps the 0–1 scale consistent regardless of topic count.
 
 ### Country Filter — Why Placeholder Now
 All current data is England. A `country = "England"` column is added at load time. When Scotland/ROI data are added later, the sidebar filter becomes functional with no code changes.
@@ -246,7 +252,77 @@ Under consideration. Not yet implemented.
 
 ---
 
-## 14. Corpus Imbalance — Limitations and Retraining Considerations
+## 14. Inference Pipeline — Batch Runner Design
+
+### Overview
+
+The batch inference pipeline (`model_pipeline/inference/batch_runner.py`) assigns thematic topics to new articles using the deployed NMF model while preserving robustness, reproducibility, and analytical interpretability.
+
+The system retrieves unprocessed articles from a Supabase database, groups them by publication week, and submits them in controlled batches to the FastAPI prediction service. Predictions are written back to the database together with confidence metrics and run metadata, allowing inference to be resumed safely after interruptions without duplicating work.
+
+### Why week-by-week processing
+
+In production, the system receives a new batch of articles every week and classifies them against the pre-trained NMF model. Running the backfill week-by-week simulates that real-world cadence. This creates realistic weekly snapshots in the database so the dashboard can show topic trends over time exactly as it would in production, and enables evaluation — each week's predictions can be inspected for sensible topic distributions, stable confidence scores, and drift signals compared to training data.
+
+### Uncertainty metric — normalised entropy
+
+A key design goal is not only to classify articles but to quantify prediction uncertainty. The pipeline computes normalised Shannon entropy across all 30 topic weights (stored as `contestability_score`):
+
+- **Near 0** = all weight concentrated on one topic — confident, robust assignment.
+- **Near 1** = weight spread uniformly — high uncertainty, genuinely contested.
+
+This replaced an earlier gap-based metric (`1 - (top - second)`) which was structurally broken with 30 topics — NMF spreads weight so thinly that every article scored 0.9+ regardless of actual certainty. See Section 12 (Dashboard Design Decisions) for the full rationale.
+
+### Idempotent processing model
+
+The pipeline follows an idempotent design in which database state determines execution progress. Articles lacking topic assignments (`dominant_topic IS NULL`) are automatically selected on each run. Successful writes remove those rows from future runs. This means:
+
+- Reruns are safe — no duplicate inference
+- Crashes recover automatically — only unfinished rows are reprocessed
+- Partial success persists — if 4 of 6 weeks complete before a failure, only the remaining 2 weeks are processed on the next run
+
+The database itself acts as the processing checkpoint.
+
+### Resilience
+
+The pipeline uses a `requests.Session` with automatic retries (5 attempts, exponential backoff) to handle transient network failures and Render cold-starts. API responses are validated before database writes. Failed upsert chunks are logged with affected article IDs for debugging without halting the overall batch.
+
+---
+
+## 15. Interpreting the Contestability Score & Responsible AI in Policy
+
+### How to read the score
+
+The contestability score is normalised Shannon entropy across all 30 topic weights. It ranges from 0 to 1:
+
+| Score | Interpretation | What it means for the article |
+|---|---|---|
+| 0.0–0.3 | Low uncertainty | Strongly dominated by one topic. The assignment is robust — the article is clearly "about" one policy area. |
+| 0.3–0.5 | Moderate uncertainty | One topic leads but others carry meaningful weight. The article touches multiple policy areas. Worth inspecting if used for policy analysis. |
+| 0.5–0.7 | High uncertainty | No single topic dominates. The article genuinely spans several themes. Classification is contestable — an analyst might reasonably assign it differently. |
+| 0.7–1.0 | Very high uncertainty | Weight is spread near-uniformly. The model has no strong opinion. These articles are often cross-cutting (e.g. a budget speech covering funding, SEND, teacher pay, and curriculum simultaneously) or outside the model's training vocabulary. |
+
+### Why this matters for responsible AI use in policy
+
+A central argument of AtlasED is that AI tools used in policy analysis should be transparent about what they don't know, not just what they predict. Most deployed classification systems present a single label with no indication of how confident or contestable that label is. A policymaker or journalist consuming those outputs has no way to distinguish between a clear-cut classification and a coin-flip.
+
+The contestability score directly addresses this:
+
+**1. Surfacing model uncertainty is a governance requirement, not a feature.**
+When an NMF model assigns "School Funding" to an article with a contestability score of 0.15, that assignment can be trusted as input to policy analysis. When it assigns the same label with a score of 0.72, the assignment is a guess — the article equally belongs to several topics and the model's choice of one is arbitrary. Hiding this distinction from users is a form of epistemic dishonesty. Responsible AI requires making the distinction visible.
+
+**2. High contestability is a finding, not a failure.**
+Articles that score high on contestability are often the most analytically interesting — they sit at the intersection of multiple policy areas, which is exactly where political contestation happens. A funding announcement that also touches SEND, teacher pay, and curriculum is genuinely multi-topic. The model correctly identifies this ambiguity rather than forcing a false clarity. Surfacing these articles for human review is more valuable than hiding them behind a confident-looking label.
+
+**3. Entropy quantifies what "contestable" actually means.**
+The project's thesis is that policy classifications are inherently contestable — different actors frame the same policy differently depending on their institutional position. The contestability score operationalises this claim with a concrete metric. Rather than asserting in prose that "classifications are subjective", the system shows exactly how subjective each classification is, article by article, on a continuous scale.
+
+**4. This connects to the broader governance argument.**
+AtlasED argues that AI systems used in public policy should be auditable, transparent, and honest about their limitations. The contestability score is one concrete mechanism for this: it forces the system to say "I'm not sure about this one" rather than presenting every output with equal confidence. This is a design pattern that could (and should) be replicated in any AI system used for policy analysis, media monitoring, or public discourse classification.
+
+---
+
+## 16. Corpus Imbalance — Limitations and Retraining Considerations
 
 ### Date Range — Why 2023–2025
 
@@ -266,7 +342,7 @@ SchoolsWeek (~69% of corpus) means: (1) TF-IDF vocabulary reflects journalistic 
 
 ---
 
-## 15. Examiner Q&A Preparation — Dashboard & Corpus
+## 17. Examiner Q&A Preparation — Dashboard & Corpus
 
 **Q: Why did you build a multi-page dashboard instead of a single page?**
 A: Different users need different views. A single page forces all audiences to scroll through irrelevant content. Streamlit's `pages/` convention lets each analytical question have its own focused surface without code duplication — shared data loading is cached and reused across pages.
@@ -281,7 +357,7 @@ A: Each article is assigned a framing type based on which predefined keyword lis
 A: A classifier requires labelled training data that doesn't exist for this domain. Keyword matching is transparent — the classification logic is human-readable and directly auditable. For a contestability analysis, transparency is more important than marginal accuracy gains from a black-box classifier.
 
 **Q: What is the contestability score and what does it tell you?**
-A: It is `1 - (dominant_topic_weight - second_highest_topic_weight)`, derived from the full W matrix. A score near 1 means the model was almost equally uncertain between two topics — the assignment is contestable. A score near 0 means the model was confident. It surfaces which articles sit at topic boundaries and what alternative classification they could have received.
+A: It is normalised Shannon entropy across all 30 topic weights. A score near 0 means all weight is concentrated on one topic — the model is confident. A score near 1 means weight is spread uniformly across topics — the assignment is genuinely uncertain. It surfaces which articles sit at topic boundaries and quantifies how much the classification should be trusted. An earlier gap-based metric (`1 - (top - second)`) was replaced because it was structurally broken with 30 topics — see Section 12 for the full rationale.
 
 **Q: Your corpus is dominated by SchoolsWeek — how does that affect your findings?**
 A: It means the NMF vocabulary and topic structure reflect journalistic framing of education policy more than institutional or governmental framing. I address this in three ways: (1) normalised chart views so SchoolsWeek volume doesn't dominate visually; (2) the framing analysis which explicitly compares how different organisation types frame the same topic; (3) acknowledging it as a finding — ed journalism's structural dominance in this corpus is itself a substantive result about agenda-setting power in education policy discourse.
@@ -294,7 +370,7 @@ A: The dashboard's target audience — researchers and policy analysts — has n
 
 ---
 
-## 16. Examiner Q&A Preparation — Model & Algorithm
+## 18. Examiner Q&A Preparation — Model & Algorithm
 
 ### Model & Algorithm
 
