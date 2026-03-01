@@ -155,7 +155,9 @@ Docker and FastAPI are independent tools — you don't need Docker to run FastAP
 
 **Together:** Docker makes the FastAPI app deployable to any cloud platform reproducibly. FastAPI makes the model callable over HTTP. Neither alone delivers a remotely-accessible, reproducible inference service.
 
-**Deployment platform:** TBC — pending UCL ISD approval of third-party cloud services. Docker images are platform-agnostic and can be deployed to any container hosting provider.
+**Deployment platform (interim):** Render (free tier, `https://atlased-api.onrender.com`). Render detects the Dockerfile in the repo, builds the image, and deploys it automatically on every push to `main`. The free tier spins down after 15 minutes of inactivity (cold-start ~30–50s on next request). This is acceptable for batch inference and development.
+
+**Deployment platform (production):** TBC — pending UCL ISD approval via Cloud@UCL (AWS or Azure). The Docker image is platform-agnostic and can be redeployed to AWS App Runner, ECS, or Azure Container Apps with no code changes. See `docs/uclcheck.md` for the approval checklist.
 
 ### Why Two Requirements Files
 

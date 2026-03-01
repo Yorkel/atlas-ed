@@ -3,7 +3,8 @@
 ## Technical — Critical Path
 
 - [x] **Dockerise FastAPI** — `Dockerfile`, `.dockerignore`, `requirements-api.txt` created and tested locally.
-- [ ] **Deploy FastAPI to Cloud@UCL** — Request access to Cloud@UCL (AWS or Azure), push Docker image to a container service (AWS App Runner / ECS or Azure Container Apps). Blocked on UCL approval (see `docs/uclcheck.md`).
+- [x] **Deploy FastAPI (interim)** — Deployed to Render free tier: `https://atlased-api.onrender.com`. Health and predict endpoints verified.
+- [ ] **Deploy FastAPI to Cloud@UCL (production)** — Request access to Cloud@UCL (AWS or Azure), redeploy Docker image. Blocked on UCL approval (see `docs/uclcheck.md`).
 - [ ] **Write `batch_runner.py`** — Calls the deployed FastAPI `/predict` endpoint for each inference article, writes results back to Supabase (`dataset_type = "inference"`).
 - [ ] **Run inference backfill** — Process the synthetic weekly datasets (Jan 2019 → Feb 2020) through the batch runner.
 - [ ] **Migrate Streamlit dashboard to Supabase** — Replace CSV reads with Supabase queries across all 5 pages.
