@@ -145,6 +145,25 @@ FastAPI with a `POST /predict` endpoint accepting a list of articles.
 - **Batch endpoint:** The intended use case is weekly processing of new scraped articles, not real-time single queries. A batch endpoint is more efficient — spaCy processes multiple texts in one pass.
 - **Singleton model loading:** Models load once at startup (via `lifespan`) and are cached in `_bundle`. This avoids reloading 700KB+ of joblib files on every request.
 
+### Containerisation — Why Docker (and why FastAPI + Docker together)
+
+Docker and FastAPI are independent tools — you don't need Docker to run FastAPI (you can run it locally with `uvicorn`), and you don't need FastAPI to use Docker (you can containerise anything). Both are used here because neither alone solves the full problem.
+
+**Why FastAPI:** `batch_runner.py` (planned — `model_pipeline/inference/`, same repo) needs to send articles to the model and receive topic assignments back without loading the model artefacts directly. FastAPI provides an HTTP interface — `POST /predict` — so the batch runner can call the model via a URL. This satisfies the apprenticeship requirement of demonstrating a deployed, callable API rather than a local model invocation.
+
+**Why Docker:** The target deployment platforms require the app to be packaged as a container image. Docker bundles the FastAPI app, the trained model artefacts (`vectorizer.joblib`, `nmf_model.joblib`, `topic_names.json`), and all Python dependencies into a single portable image that runs identically regardless of where it is deployed.
+
+**Together:** Docker makes the FastAPI app deployable to any cloud platform reproducibly. FastAPI makes the model callable over HTTP. Neither alone delivers a remotely-accessible, reproducible inference service.
+
+**Deployment platform:** TBC — pending UCL ISD approval of third-party cloud services. Docker images are platform-agnostic and can be deployed to any container hosting provider.
+
+### Why Two Requirements Files
+
+- **`requirements.txt`** — full development environment. Includes everything needed to run the training pipeline, experiments, Jupyter notebooks, evaluation, and Supabase upload. This is what you install locally with `pip install -r requirements.txt`.
+- **`requirements-api.txt`** — minimal API-only dependencies (9 packages). This is what the Dockerfile installs. It includes only what the FastAPI inference API needs to run: `fastapi`, `uvicorn`, `pydantic`, `pandas`, `numpy`, `scikit-learn`, `spacy`, `joblib`, `PyYAML`. No Jupyter, no gensim, no supabase, no experiment tracking.
+
+The split exists because Docker images should be as small as possible. Installing Jupyter and gensim inside a deployed API container would add hundreds of megabytes for packages the API never uses.
+
 ---
 
 ## 11. Database — Why Supabase (PostgreSQL)

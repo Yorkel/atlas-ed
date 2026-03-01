@@ -116,6 +116,9 @@ webcolors==25.10.0
 webencodings==0.5.1
 websocket-client==1.9.0
 wrapt==2.0.1
-gensim
-supabase
-python-dotenv
+gensim==4.4.0
+supabase==2.28.0
+python-dotenv==1.2.1
+fastapi==0.129.0
+uvicorn==0.41.0
+scikit-learn==1.7.2
