@@ -7,13 +7,13 @@
 - [ ] **Deploy FastAPI to Cloud@UCL (production)** — Request access to Cloud@UCL (AWS or Azure), redeploy Docker image. Blocked on UCL approval (see `docs/uclcheck.md`).
 - [x] **Write `batch_runner.py`** — Calls the deployed FastAPI `/predict` endpoint for each inference article, writes results back to Supabase (`dataset_type = "inference"`).
 - [x] **Run inference backfill** — 128 articles across 6 weeks (Jan 9 → Feb 20, 2026) processed successfully.
-- [ ] **Migrate Streamlit dashboard to Supabase** — Replace CSV reads with Supabase queries across all 5 pages.
-- [ ] **Deploy Streamlit dashboard** — Push to Streamlit Community Cloud. Hold the public URL until ISD approval is received.
+- [x] **Migrate Streamlit dashboard to Supabase** — Created shared `supabase_loader.py`, replaced CSV reads with paginated Supabase queries across all 5 pages. Contestability tab now uses real Shannon entropy scores. Tested locally: 4,100 articles (3,972 training + 128 inference).
+- [ ] **Deploy Streamlit dashboard** — Push to Streamlit Community Cloud. Add `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` to Streamlit Cloud secrets. Hold the public URL until ISD approval is received.
 
 ## Technical — Secondary
 
 - [ ] **Fix URLs in scraping repo** — 2,992 training articles in Supabase have `url = NULL`, meaning they can't be matched back to topic assignments in future runs. Investigate why the scraping pipeline didn't write URLs and fix it.
-- [ ] **Remove `text_clean` from public API/dashboard** — The `text_clean` column contains full article text. Do not expose it via the public API endpoint or display it in the dashboard. For internal pipeline use only.
+- [ ] **Remove `text_clean` from public API/dashboard** — The `text_clean` column contains full article text. Do not expose it via the public API endpoint or display it in the dashboard. For internal pipeline use only. Currently visible in Topic Explorer article expanders — must be replaced with `preview` before public launch.
 - [x] **Drift monitoring** — `drift_monitor.py` written, `drift_metrics` table created in Supabase. Tracks JS divergence, confidence, contestability, topic concentration (HHI) per inference week. See `docs/drift_monitor.md`.
 
 ## SchoolsWeek & Copyright — Do Now
@@ -36,7 +36,14 @@
 - [ ] **Data Management Plan** — Complete via DMPonline: https://dmponline.dcc.ac.uk/
 - [ ] **Register dataset** — Record the dataset in the UCL Research Data Repository (Figshare): https://rdr.ucl.ac.uk/
 
+## AM1 Deliverables
+
+- [ ] **5,000 word report** — Full report on format detailed in the apprenticeship standard. Based on a deployed ML model. Appendices not included in word count. Electronic report. 8 weeks to complete and submit after gateway.
+- [ ] **20 minute presentation** — Demonstrate how you have met the assessment criteria for AM1. Cover: problem scoping, ML experimentation (NMF vs LDA vs BERTopic), deployment (Render + Supabase + Streamlit), responsible AI (contestability + drift monitoring), stakeholder engagement (dashboard + workshops).
+- [ ] **Prepare for 30 min EPAO questioning** — Anticipate questions on: why NMF over deep learning, how you'd handle model degradation, what contestability means in practice, source imbalance limitations, ethical considerations of scraping, deployment trade-offs.
+
 ## Out of Scope (Separate Repos)
 
 - Sentiment analysis pipeline
 - AtlasED public website (separate repo — see `docs/website_plan.md`)
+- Co-design workshops (planning stage — see website plan)
