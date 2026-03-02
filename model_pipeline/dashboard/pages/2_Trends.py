@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from pathlib import Path
 
 st.set_page_config(
     page_title="Trends | Education Policy Observatory",
@@ -21,23 +20,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-ROOT = Path(__file__).resolve().parents[3]
-DATA_PATH = ROOT / "data" / "evaluation_outputs" / "dashboard_data.csv"
+from model_pipeline.dashboard.supabase_loader import load_articles
 
 ELECTION_DATE = pd.Timestamp("2024-07-04")
 
-
-@st.cache_data
-def load_data() -> pd.DataFrame:
-    df = pd.read_csv(DATA_PATH, parse_dates=["date"])
-    df["country"] = "England"
-    df["topic_name"] = df["topic_name"].str.replace("_", " ").str.title()
-    df["source"] = df["source"].str.upper()
-    df["month"] = df["date"].dt.to_period("M").dt.to_timestamp()
-    return df
-
-
-df = load_data()
+df = load_articles()
 
 # ── Sidebar filters ───────────────────────────────────────────────────────────
 with st.sidebar:

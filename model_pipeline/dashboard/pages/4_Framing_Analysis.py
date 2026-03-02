@@ -11,7 +11,6 @@ Ties → "mixed" | Zero matches → "unclassified"
 import streamlit as st
 import pandas as pd
 import altair as alt
-from pathlib import Path
 
 st.set_page_config(
     page_title="Framing Analysis | Education Policy Observatory",
@@ -46,18 +45,13 @@ FRAMINGS: dict[str, list[str]] = {
                    "parliament", "legislation", "conservative", "election"],
 }
 
-ROOT = Path(__file__).resolve().parents[3]
-DATA_PATH = ROOT / "data" / "evaluation_outputs" / "dashboard_data.csv"
+from model_pipeline.dashboard.supabase_loader import load_articles
 
 
 # ── Data loading + framing assignment ────────────────────────────────────────
 @st.cache_data
 def load_and_frame() -> pd.DataFrame:
-    df = pd.read_csv(DATA_PATH, parse_dates=["date"])
-    df["country"] = "England"
-    df["topic_name"] = df["topic_name"].str.replace("_", " ").str.title()
-    df["source"] = df["source"].str.upper()
-    df["month"] = df["date"].dt.to_period("M").dt.to_timestamp()
+    df = load_articles()
     df["framing"] = df["text_clean"].apply(_assign_framing)
     return df
 
