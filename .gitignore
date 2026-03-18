@@ -249,6 +249,9 @@ data/
 # Internal docs (not pushed to GitHub)
 docs/internal/
 
+# Dashboard snapshots (data files)
+model_pipeline/dashboard/snapshots/
+
 # Credentials
 credentials.json
 
