@@ -1,15 +1,21 @@
 """
 Shared data loader for the Streamlit dashboard.
 
-Replaces CSV reads with paginated Supabase queries. All column renaming
-and transformations happen here so that every dashboard page receives a
-DataFrame identical in shape to the old dashboard_data.csv.
+Strategy: read from a local parquet snapshot for instant loading.
+The snapshot is refreshed after each weekly batch run via `refresh_snapshot()`.
+Falls back to live Supabase queries if the snapshot doesn't exist.
 """
 
 import os
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 from supabase import create_client, Client
+
+
+_SNAPSHOT_DIR = Path(__file__).resolve().parent / "snapshots"
+_SNAPSHOT_PATH = _SNAPSHOT_DIR / "articles.parquet"
+_SNAPSHOT_PROBS_PATH = _SNAPSHOT_DIR / "articles_with_probs.parquet"
 
 
 # ── Supabase client ──────────────────────────────────────────────────────────
@@ -102,37 +108,80 @@ def _transform(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# ── Snapshot refresh (run after batch_runner) ────────────────────────────────
+
+def refresh_snapshot():
+    """Fetch all data from Supabase and save as parquet snapshots.
+
+    Run this after the weekly batch to update the dashboard cache:
+        python -c "from model_pipeline.dashboard.supabase_loader import refresh_snapshot; refresh_snapshot()"
+    """
+    _SNAPSHOT_DIR.mkdir(exist_ok=True)
+    client = get_client()
+
+    # Standard articles snapshot
+    rows = _fetch_all(client, _ARTICLE_COLUMNS)
+    df = pd.DataFrame(rows)
+    df = _transform(df)
+    df.to_parquet(_SNAPSHOT_PATH, index=False)
+    print(f"Snapshot saved: {len(df)} articles → {_SNAPSHOT_PATH}")
+
+    # Articles with probabilities snapshot
+    rows_probs = _fetch_all(client, _ARTICLE_COLUMNS_WITH_PROBS)
+    df_probs = pd.DataFrame(rows_probs)
+    probs = df_probs["topic_probabilities"].apply(
+        lambda x: x if isinstance(x, dict) else {}
+    )
+    probs_df = pd.json_normalize(probs)
+    topic_cols = sorted(probs_df.columns.tolist())
+    df_probs = pd.concat([df_probs.drop(columns=["topic_probabilities"]), probs_df], axis=1)
+    df_probs = _transform(df_probs)
+    df_probs.to_parquet(_SNAPSHOT_PROBS_PATH, index=False)
+    print(f"Probs snapshot saved: {len(df_probs)} articles, {len(topic_cols)} topic cols → {_SNAPSHOT_PROBS_PATH}")
+
+    return df
+
+
 # ── Public loaders ───────────────────────────────────────────────────────────
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=3600)
 def load_articles() -> pd.DataFrame:
-    """Load all articles with topic assignments from Supabase.
+    """Load articles from parquet snapshot (fast) or Supabase fallback (slow)."""
+    if _SNAPSHOT_PATH.exists():
+        df = pd.read_parquet(_SNAPSHOT_PATH)
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df["month"] = pd.to_datetime(df["month"], errors="coerce")
+        return df
 
-    Returns a DataFrame with the same columns the dashboard expects:
-    article_id, date, year, month, source, type, country, topic_num,
-    topic_name, dominant_topic_weight, preview, text_clean,
-    election_period, contestability_score, dataset_type.
-    """
+    # Fallback: live Supabase query
     client = get_client()
     rows = _fetch_all(client, _ARTICLE_COLUMNS)
     df = pd.DataFrame(rows)
     return _transform(df)
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=3600)
 def load_articles_with_probabilities() -> tuple[pd.DataFrame, list[str]]:
-    """Load articles plus the full topic probability matrix.
+    """Load articles + topic probability matrix from snapshot or Supabase."""
+    if _SNAPSHOT_PROBS_PATH.exists():
+        df = pd.read_parquet(_SNAPSHOT_PROBS_PATH)
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df["month"] = pd.to_datetime(df["month"], errors="coerce")
+        # Identify topic columns (everything not in the standard set)
+        standard_cols = {
+            "article_id", "source", "type", "date", "election_period",
+            "topic_num", "topic_name", "dominant_topic_weight",
+            "preview", "text_clean", "contestability_score", "dataset_type",
+            "country", "year", "month",
+        }
+        topic_cols = sorted([c for c in df.columns if c not in standard_cols])
+        return df, topic_cols
 
-    Returns:
-        df: DataFrame with all standard columns PLUS one column per topic
-            (from the topic_probabilities JSONB).
-        topic_cols: List of the topic weight column names.
-    """
+    # Fallback: live Supabase query
     client = get_client()
     rows = _fetch_all(client, _ARTICLE_COLUMNS_WITH_PROBS)
     df = pd.DataFrame(rows)
 
-    # Expand topic_probabilities JSONB into separate columns
     probs = df["topic_probabilities"].apply(
         lambda x: x if isinstance(x, dict) else {}
     )

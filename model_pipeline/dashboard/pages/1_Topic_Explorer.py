@@ -5,7 +5,7 @@ import altair as alt
 from pathlib import Path
 
 st.set_page_config(
-    page_title="Topic Explorer | Education Policy Observatory",
+    page_title="Topic Explorer | AtlasED",
     page_icon="🔍",
     layout="wide",
 )

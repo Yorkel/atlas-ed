@@ -13,7 +13,7 @@ import pandas as pd
 import altair as alt
 
 st.set_page_config(
-    page_title="Framing Analysis | Education Policy Observatory",
+    page_title="Framing Analysis | AtlasED",
     page_icon="🔬",
     layout="wide",
 )
@@ -44,6 +44,10 @@ FRAMINGS: dict[str, list[str]] = {
     "political":  ["government", "labour", "minister", "policy", "reform",
                    "parliament", "legislation", "conservative", "election"],
 }
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from model_pipeline.dashboard.supabase_loader import load_articles
 

@@ -246,6 +246,9 @@ mlruns/
 # Raw data
 data/
 
+# Internal docs (not pushed to GitHub)
+docs/internal/
+
 # Credentials
 credentials.json
 

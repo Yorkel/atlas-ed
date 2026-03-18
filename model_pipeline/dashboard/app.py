@@ -3,7 +3,7 @@ import pandas as pd
 import altair as alt
 
 st.set_page_config(
-    page_title="Education Policy Observatory",
+    page_title="AtlasED",
     page_icon="🔭",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -25,12 +25,16 @@ h3 { margin-bottom: 0.5rem; }
 </style>
 """, unsafe_allow_html=True)
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from model_pipeline.dashboard.supabase_loader import load_articles
 
 df = load_articles()
 
 # ── Header ────────────────────────────────────────────────────────────────────
-st.title("Education Policy Observatory")
+st.title("AtlasED")
 st.caption("Tracking who shapes the education policy conversation, and how.")
 
 st.info(

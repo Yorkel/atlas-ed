@@ -3,7 +3,7 @@ import pandas as pd
 import altair as alt
 
 st.set_page_config(
-    page_title="Organisations | Education Policy Observatory",
+    page_title="Organisations | AtlasED",
     page_icon="🏛️",
     layout="wide",
 )
@@ -19,6 +19,10 @@ st.markdown("""
 [data-testid="stMetricLabel"] { justify-content: center; }
 </style>
 """, unsafe_allow_html=True)
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from model_pipeline.dashboard.supabase_loader import load_articles
 
