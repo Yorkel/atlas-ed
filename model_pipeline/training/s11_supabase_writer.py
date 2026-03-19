@@ -124,7 +124,7 @@ def write_training_results(
     Args:
         df_alloc:  Output of s06 run_topic_allocation(). Must contain url,
                    topic_num, topic_name, dominant_topic_weight, all 30 topic
-                   weight columns, text_clean, and date.
+                   weight columns, text_clean, and article_date.
         run_id:    The run directory name (e.g. "2026-02-19_223857").
     """
     missing_cols = [c for c in TOPIC_COLS if c not in df_alloc.columns]
@@ -168,7 +168,7 @@ def write_training_results(
             "topic_probabilities":    _build_topic_probabilities(row_series),
             "contestability_score":   round(_compute_contestability(row_series), 6),
             "text_clean":             str(row.text_clean) if pd.notna(getattr(row, "text_clean", None)) else None,
-            "election_period":        _election_period(getattr(row, "date", None)),
+            "election_period":        _election_period(getattr(row, "article_date", None)),
             "run_id":                 run_id,
         })
 

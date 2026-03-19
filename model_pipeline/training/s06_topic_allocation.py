@@ -7,7 +7,7 @@ Input:
 - df with:
     - 'text_clean' (for export readability; from s02)
     - 'text_final' (for vectorisation; from s03)
-    - metadata: url, date, source, type (as available)
+    - metadata: url, article_date, source, type (as available)
 - fitted vectorizer (from s04)
 - trained NMF model (from s05)
 
@@ -36,31 +36,31 @@ TOPIC_NAMES: Dict[int, str] = {
     2: "mat_governance",
     3: "teacher_pay",
     4: "ofsted_inspections",
-    5: "academic_attainment",
+    5: "exam_results",
     6: "pupil_absence",
     7: "dfe_intervention",
-    8: "send_provision",
+    8: "local_authority_deficits",
     9: "teacher_strikes",
     10: "apprenticeships",
     11: "exam_regulation",
     12: "raac_crisis",
-    13: "examinations_and_assessment",
-    14: "school_funding",
+    13: "disadvantaged_groups",
+    14: "free_school_meals",
     15: "education_politics",
     16: "education_research",
     17: "leadership_appointments",
     18: "ai_and_edtech",
-    19: "post_16_education",
-    20: "mental_health",
+    19: "mental_health",
+    20: "curriculum",
     21: "safeguarding",
     22: "teacher_recruitment",
-    23: "accountability_reform",
-    24: "curriculum_policy",
-    25: "attendance_hubs",
-    26: "disadvantage_and_attainment_gaps",
-    27: "free_school_meals",
+    23: "school_funding",
+    24: "exclusions_suspensions",
+    25: "report_cards",
+    26: "send_inclusion",
+    27: "primary_assessment",
     28: "school_places",
-    29: "exclusions",
+    29: "breakfast_clubs",
 }
 
 
@@ -70,7 +70,7 @@ def run_topic_allocation(
     vectorizer,
     text_final_col: str = "text_final",
     text_clean_col: str = "text_clean",
-    date_col: str = "date",
+    date_col: str = "article_date",
     topic_names: Dict[int, str] = TOPIC_NAMES,
 ) -> pd.DataFrame:
     """
@@ -149,7 +149,7 @@ def export_analysis_ready_csv(
 
     export_cols = [
         "url",
-        "date",
+        "article_date",
         "year",
         "month",
         "source",

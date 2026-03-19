@@ -2,7 +2,7 @@
 s01_data_loader.py
 
 Data loading for AM1 NMF pipeline.
-Loads full_retro CSV, combines title + text into a single 'text' column,
+Loads articles from CSV, combines title + text into a single 'text' column,
 and removes PDF-sourced rows.
 """
 
@@ -22,7 +22,7 @@ DATA_PATHS = {
     "short":      DATA_DIR / "short"      / "short_articles.csv",  # add when ready
 }
 
-REQUIRED_COLS = {"title", "text", "date", "source", "type"}
+REQUIRED_COLS = {"title", "text", "article_date", "source", "type"}
 
 
 # ── PDF detection ─────────────────────────────────────────────────────────────
@@ -58,10 +58,9 @@ def load_articles(dataset: str = "full_retro") -> pd.DataFrame:
 
     # Combine title + text (mirrors notebook exactly)
     df["text"] = df["title"].fillna("") + "\n\n" + df["text"].fillna("")
-    df.drop(columns=["title"], inplace=True)
 
     # Parse date early so downstream can assume datetime
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df["article_date"] = pd.to_datetime(df["article_date"], errors="coerce")
 
     # Remove PDF rows
     n_before = len(df)

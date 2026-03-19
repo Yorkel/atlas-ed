@@ -93,13 +93,13 @@ with tab_overview:
 
         filtered = (
             topic_df[topic_df["source"].isin(sel_src) & topic_df["type"].isin(sel_type)]
-            .sort_values("date", ascending=False)
+            .sort_values("article_date", ascending=False)
         )
         st.caption(f"Showing {min(len(filtered), 50)} of {len(filtered)} articles")
 
         for _, row in filtered.head(50).iterrows():
             label = (
-                f"{row['source']} · {row['date'].strftime('%b %Y')} "
+                f"{row['source']} · {row['article_date'].strftime('%b %Y')} "
                 f"· confidence: {row['dominant_topic_weight']:.3f}"
             )
             with st.expander(label):

@@ -95,15 +95,14 @@ def _transform(df: pd.DataFrame) -> pd.DataFrame:
         "id": "article_id",
         "dominant_topic": "topic_name",
         "article_type": "type",
-        "article_date": "date",
     })
 
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df["article_date"] = pd.to_datetime(df["article_date"], errors="coerce")
     df["country"] = "England"
     df["topic_name"] = df["topic_name"].str.replace("_", " ").str.title()
     df["source"] = df["source"].str.upper()
-    df["year"] = df["date"].dt.year
-    df["month"] = df["date"].dt.to_period("M").dt.to_timestamp()
+    df["year"] = df["article_date"].dt.year
+    df["month"] = df["article_date"].dt.to_period("M").dt.to_timestamp()
 
     return df
 
@@ -149,7 +148,7 @@ def load_articles() -> pd.DataFrame:
     """Load articles from parquet snapshot (fast) or Supabase fallback (slow)."""
     if _SNAPSHOT_PATH.exists():
         df = pd.read_parquet(_SNAPSHOT_PATH)
-        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df["article_date"] = pd.to_datetime(df["article_date"], errors="coerce")
         df["month"] = pd.to_datetime(df["month"], errors="coerce")
         return df
 
@@ -165,11 +164,11 @@ def load_articles_with_probabilities() -> tuple[pd.DataFrame, list[str]]:
     """Load articles + topic probability matrix from snapshot or Supabase."""
     if _SNAPSHOT_PROBS_PATH.exists():
         df = pd.read_parquet(_SNAPSHOT_PROBS_PATH)
-        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df["article_date"] = pd.to_datetime(df["article_date"], errors="coerce")
         df["month"] = pd.to_datetime(df["month"], errors="coerce")
         # Identify topic columns (everything not in the standard set)
         standard_cols = {
-            "article_id", "source", "type", "date", "election_period",
+            "article_id", "source", "type", "article_date", "election_period",
             "topic_num", "topic_name", "dominant_topic_weight",
             "preview", "text_clean", "contestability_score", "dataset_type",
             "country", "year", "month",
