@@ -1,20 +1,20 @@
 """
 s11_supabase_writer.py
 
-Step 11: Write training topic assignments to Supabase.
+Step 11: Write topic assignments to Supabase `articles_topics` table.
 
-Takes df_alloc (output of s06) and updates the corresponding rows
-in the Supabase `articles` table, matched by URL → UUID lookup.
+Takes df_alloc (output of s06) and writes results to `articles_topics`,
+matched by article `id` from `articles_raw`.
 
 Strategy:
-  1. Fetch all (id, url) pairs from Supabase to build a url→id map.
-  2. Build a list of upsert payloads keyed on `id`.
-  3. Upsert in chunks of CHUNK_SIZE (avoids per-row round-trips).
+  1. Build upsert payloads from df_alloc (which already has `id` from articles_raw).
+  2. Upsert in chunks of CHUNK_SIZE.
 
 Columns written per row:
-  dataset_type, topic_num, dominant_topic, dominant_topic_weight,
-  topic_probabilities (JSONB), contestability_score,
-  text_clean, election_period, run_id
+  url, title, article_date, source, country, institution_name, language,
+  dataset_type, week_number, model_type, topic_num, dominant_topic,
+  dominant_topic_weight, topic_probabilities (JSONB), contestability_score,
+  text_clean, article_text, election_period, run_id
 
 Run standalone:
   python -m model_pipeline.training.s11_supabase_writer
@@ -61,10 +61,6 @@ def _compute_contestability(row: pd.Series) -> float:
     Normalised Shannon entropy across all topic weights.
     0.0 = all weight on one topic (certain).
     1.0 = uniform distribution (maximum uncertainty).
-
-    Replaces the gap-based metric (1 - (top - second)) which was
-    structurally broken with 30 topics — NMF spreads weight so thinly
-    that every article scored 0.9+ regardless of actual certainty.
     """
     weights = row[TOPIC_COLS].values.astype(float)
     weights = np.maximum(weights, 1e-12)
@@ -88,44 +84,22 @@ def _election_period(date) -> str:
     return "post_election" if pd.Timestamp(date) >= ELECTION_DATE else "pre_election"
 
 
-def _fetch_url_id_map(client: Client) -> dict[str, str]:
-    """Fetch all (url, id) pairs from Supabase to match pipeline rows to UUIDs."""
-    logger.info("Fetching url→id map from Supabase...")
-    url_to_id: dict[str, str] = {}
-    page = 0
-    while True:
-        start = page * CHUNK_SIZE
-        response = (
-            client.table("articles")
-            .select("id, url")
-            .range(start, start + CHUNK_SIZE - 1)
-            .execute()
-        )
-        rows = response.data
-        for row in rows:
-            if row.get("url"):
-                url_to_id[row["url"]] = row["id"]
-        if len(rows) < CHUNK_SIZE:
-            break
-        page += 1
-    logger.info("Found %d existing rows in Supabase.", len(url_to_id))
-    return url_to_id
-
-
 # ── Main writer ───────────────────────────────────────────────────────────────
 
-def write_training_results(
+def write_topic_results(
     df_alloc: pd.DataFrame,
     run_id: str,
+    model_type: str = "nmf",
 ) -> None:
     """
-    Upsert training topic assignments into Supabase in batches.
+    Upsert topic assignments into Supabase `articles_topics` table.
 
     Args:
-        df_alloc:  Output of s06 run_topic_allocation(). Must contain url,
-                   topic_num, topic_name, dominant_topic_weight, all 30 topic
-                   weight columns, text_clean, and article_date.
-        run_id:    The run directory name (e.g. "2026-02-19_223857").
+        df_alloc:    Output of s06 run_topic_allocation(). Must contain id, url,
+                     topic_num, topic_name, dominant_topic_weight, all 30 topic
+                     weight columns, text_clean, and article_date.
+        run_id:      The run directory name (e.g. "2026-03-19_160734").
+        model_type:  "nmf" or "bertopic".
     """
     missing_cols = [c for c in TOPIC_COLS if c not in df_alloc.columns]
     if missing_cols:
@@ -135,7 +109,6 @@ def write_training_results(
         )
 
     client = get_supabase_client()
-    url_to_id = _fetch_url_id_map(client)
 
     payloads: list[dict] = []
     skipped = 0
@@ -145,29 +118,33 @@ def write_training_results(
         total=len(df_alloc),
         desc="Building payloads",
     ):
+        row_id = getattr(row, "id", None)
         url = getattr(row, "url", None)
-        if not url or pd.isna(url):
-            skipped += 1
-            continue
-
-        row_id = url_to_id.get(url)
-        if not row_id:
-            logger.debug("URL not found in Supabase, skipping: %s", url)
+        if not row_id or pd.isna(row_id):
             skipped += 1
             continue
 
         row_series = pd.Series(row._asdict())
 
         payloads.append({
-            "id":                     row_id,
-            "url":                    url,
-            "dataset_type":           "training",
+            "id":                     str(row_id),
+            "url":                    str(url) if pd.notna(url) else None,
+            "title":                  str(row.title) if pd.notna(getattr(row, "title", None)) else None,
+            "article_date":           str(row.article_date) if pd.notna(getattr(row, "article_date", None)) else None,
+            "source":                 str(row.source) if pd.notna(getattr(row, "source", None)) else None,
+            "country":                str(row.country) if pd.notna(getattr(row, "country", None)) else None,
+            "institution_name":       str(row.institution_name) if pd.notna(getattr(row, "institution_name", None)) else None,
+            "language":               str(row.language) if pd.notna(getattr(row, "language", None)) else "en",
+            "dataset_type":           str(row.dataset_type) if pd.notna(getattr(row, "dataset_type", None)) else "training",
+            "week_number":            int(row.week_number) if pd.notna(getattr(row, "week_number", None)) else None,
+            "model_type":             model_type,
             "topic_num":              int(row.topic_num),
             "dominant_topic":         str(row.topic_name),
             "dominant_topic_weight":  round(float(row.dominant_topic_weight), 6),
             "topic_probabilities":    _build_topic_probabilities(row_series),
             "contestability_score":   round(_compute_contestability(row_series), 6),
             "text_clean":             str(row.text_clean) if pd.notna(getattr(row, "text_clean", None)) else None,
+            "article_text":           str(row.text) if pd.notna(getattr(row, "text", None)) else None,
             "election_period":        _election_period(getattr(row, "article_date", None)),
             "run_id":                 run_id,
         })
@@ -182,7 +159,7 @@ def write_training_results(
     ):
         chunk = payloads[i : i + CHUNK_SIZE]
         try:
-            client.table("articles").upsert(chunk).execute()
+            client.table("articles_topics").upsert(chunk).execute()
         except Exception as e:
             logger.warning("Chunk %d failed: %s", i // CHUNK_SIZE, e)
             errors.append(i // CHUNK_SIZE)
@@ -194,6 +171,10 @@ def write_training_results(
     )
     if errors:
         logger.warning("Failed chunk indices: %s", errors)
+
+
+# Keep old name as alias for backward compatibility
+write_training_results = write_topic_results
 
 
 # ── Standalone smoke test ─────────────────────────────────────────────────────
@@ -222,8 +203,8 @@ def main() -> None:
         df, nmf_model=nmf_out.nmf_model, vectorizer=vec_out.vectorizer
     )
 
-    write_training_results(df_alloc, run_id=run_id)
-    print("\n✅ s11 complete — training results written to Supabase.")
+    write_topic_results(df_alloc, run_id=run_id, model_type="nmf")
+    print("\n✅ s11 complete — topic results written to Supabase (articles_topics).")
 
 
 if __name__ == "__main__":
