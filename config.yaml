@@ -1,5 +1,8 @@
 data:
   dataset_name: eng_training
+  source: supabase                    # supabase or csv
+  training_country: eng
+  training_csv: data/training/eng_training.csv
 
 tfidf:
   min_df: 3
@@ -14,8 +17,16 @@ nmf:
   max_iter: 1000
 
 evaluation:
-  coherence_topic_range: [5, 80, 5]   # passed as range(start, stop, step)
+  coherence_topic_range: [5, 55, 5]   # passed as range(start, stop, step)
   n_top_words: 10
-  stability_seeds: [1, 2, 3, 4, 5]
+  stability_seeds: [42, 123, 456, 789, 1024]
   stability_init: nndsvda
-  stability_max_iter: 3000
+  stability_max_iter: 1000
+
+inference:
+  model_type: nmf
+  countries: [eng, sco, irl]
+
+drift:
+  cadence: monthly                    # weekly scores computed, aggregated monthly
+  baseline: eng_training

@@ -26,6 +26,13 @@ jobs:
           pip install -r requirements.txt
           python -m spacy download en_core_web_sm
 
+      - name: Debug secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          python -c "import os; url=os.environ.get('SUPABASE_URL','MISSING'); print(f'URL length: {len(url)}, starts with https: {url.startswith(\"https://\")}, ends with .co: {url.endswith(\".co\")}')"
+
       - name: Run weekly pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

@@ -22,13 +22,13 @@ The pipeline trains on England's policy corpus as a baseline. Scottish and Irish
 
 ## Data
 
-**5,885 documents** from government departments, think tanks, media outlets, professional bodies, and research organisations across three jurisdictions. Updated weekly.
+**~6,000 documents** from government departments, think tanks, media outlets, professional bodies, and research organisations across three jurisdictions. Updated weekly.
 
 | Jurisdiction | Training (2023–2025) | Inference (2023–2025) | Weekly inference (2026) |
 |---|---|---|---|
-| **England** | 3,943 articles | — | 219 (weeks 1–10) |
-| **Scotland** | — | 511 backfill | 111 (weeks 1–10) |
-| **Ireland** | — | 1,036 backfill | 65 (weeks 1–10) |
+| **England** | 3,943 articles | — | 231 (weeks 1–11) |
+| **Scotland** | — | 511 backfill | 120 (weeks 1–11) |
+| **Ireland** | — | 1,036 backfill | 67 (weeks 1–11) |
 
 **England sources:** SchoolsWeek, UK Government, FFT Education Datalab, Education Policy Institute, Nuffield Foundation, Federation of Education.
 **Scotland sources:** Scottish Government, Children in Scotland, GTCS, ADES, SERA.
@@ -43,16 +43,16 @@ Storage: Supabase/PostgreSQL. Raw text in `articles_raw`, topic assignments in `
 ## Architecture
 
 ### Training (England baseline)
-NMF and BERTopic models trained on the England corpus. The England model defines the topic space — this is a deliberate specification choice, not a default.
+NMF model trained on the England corpus (3,943 articles, 30 topics, k confirmed by coherence sweep and stability testing). The England model defines the topic space — this is a deliberate specification choice, not a default. BERTopic comparison planned.
 
 ### Inference (cross-jurisdiction)
-Scotland and Ireland corpora are passed through the England-trained model. Each document receives topic assignments relative to England's topic structure. The backfill (2023–2025) provides the cross-jurisdiction baseline; weekly runs (2026 onwards) track change over time.
+Scotland and Ireland corpora are passed through the England-trained model. Each document receives topic assignments relative to England's topic structure. The backfill (2023–2025) provides the cross-jurisdiction baseline; weekly runs (2026 onwards) track change over time. Automated via GitHub Actions.
 
 ### Drift detection
-Jensen-Shannon divergence computed per jurisdiction per week against the England training distribution. Per-jurisdiction drift trajectories are logged as distinct time series.
+Jensen-Shannon divergence computed per jurisdiction against the England training distribution. Drift monitoring runs monthly (weekly article volume is too low for reliable weekly drift scores in Scotland and Ireland). Per-jurisdiction drift trajectories stored in Supabase.
 
-### Cross-jurisdiction distributional analysis
-KL divergence computed in both directions for all jurisdiction pairs. Directional asymmetry tested: does one jurisdiction systematically act as the implicit baseline? Robustness checks: balanced subsamples, parameter perturbation (k varied), model swap (NMF vs BERTopic).
+### Cross-jurisdiction distributional analysis (in progress)
+KL divergence (both directions, all jurisdiction pairs), balanced subsamples, and parameter perturbation are planned as robustness checks.
 
 ### Specification scoring layer
 Three computable dimensions that make specification choices visible:
@@ -70,60 +70,51 @@ A fourth dimension (recourse quality) was designed, tested, and scoped out of th
 ```
 AM1_topic_modelling/
 ├── config.yaml                              # All tunable parameters
+├── sync_from_supabase.py                    # Pull data from Supabase to local CSVs
+├── run_weekly.py                            # Weekly pipeline: sync → inference → write
+├── run_monthly_drift.py                     # Monthly drift monitoring
+├── Dockerfile                               # API deployment container
 ├── data/
-│   ├── full_retro/                          # Local CSV fallback
-│   └── evaluation_outputs/                  # Coherence + stability CSVs
+│   ├── training/                            # England training CSVs (synced, gitignored)
+│   ├── inference/                           # Backfill + weekly CSVs (synced, gitignored)
+│   └── evaluation_outputs/                  # Coherence, stability, topic comparison CSVs
 ├── model_pipeline/
 │   ├── training/                            # Model training (England)
-│   │   ├── s01_data_loader.py               #   Load from Supabase or CSV
+│   │   ├── s01_data_loader.py               #   Load from CSV
 │   │   ├── s02_cleaning.py                  #   Structural text cleaning
-│   │   ├── s03_spacy_processing.py          #   Lemmatisation, stopwords
+│   │   ├── s03_spacy_processing.py          #   Lemmatisation, POS filtering, stopwords
 │   │   ├── s04_vectorisation.py             #   TF-IDF
 │   │   ├── s05_nmf_training.py              #   NMF model fitting
-│   │   ├── s05b_bertopic_training.py        #   BERTopic model fitting
 │   │   ├── s06_topic_allocation.py          #   Assign topics to documents
-│   │   ├── s06b_topic_naming.py             #   LLM-assisted topic naming
 │   │   ├── s07_evaluation.py                #   Coherence + stability
 │   │   ├── s08_save_outputs.py              #   Versioned run artifacts
 │   │   ├── s09_mlflow_logging.py            #   Experiment tracking
-│   │   ├── s10_pipeline.py                  #   NMF orchestrator
-│   │   ├── s10b_bertopic_pipeline.py        #   BERTopic orchestrator
+│   │   ├── s10_pipeline.py                  #   Training orchestrator
 │   │   └── s11_supabase_writer.py           #   Write results to DB
 │   ├── inference/                           # Weekly + backfill inference
 │   │   ├── batch_runner.py                  #   NMF inference (all countries)
-│   │   ├── bertopic_batch_runner.py         #   BERTopic inference
-│   │   └── drift_monitor.py                 #   Per-jurisdiction drift
-│   ├── analysis/                            # Cross-jurisdiction analysis
-│   │   ├── kl_divergence.py                 #   KL/JS divergence
-│   │   ├── robustness.py                    #   Balanced subsamples, k perturbation
-│   │   ├── specification_scores.py          #   Three computable dimensions
-│   │   └── vocabulary_audit.py              #   spaCy cross-jurisdiction check
+│   │   └── drift_monitor.py                 #   Per-jurisdiction JS divergence
 │   ├── api/                                 # FastAPI serving layer
 │   │   ├── main.py
 │   │   └── model_loader.py
 │   └── dashboard/                           # Streamlit application
-│       ├── app.py                           #   Overview + headline findings
+│       ├── app.py                           #   Overview
 │       ├── supabase_loader.py               #   Data loading + caching
-│       ├── rag_agent.py                     #   LangGraph chatbot agent
 │       └── pages/
-│           ├── 1_Topic_Explorer.py           #   Browse topics by jurisdiction
-│           ├── 2_Trends.py                   #   Drift + topic prominence over time
-│           ├── 3_Organisations.py            #   Source × topic analysis
-│           ├── 4_Framing_Analysis.py         #   Keyword framing by org/time
-│           ├── 5_Build_Your_Model.py         #   Interactive specification explorer
-│           └── 6_Ask_AtlasED.py              #   RAG chatbot interface
+│           ├── 1_Topic_Explorer.py
+│           ├── 2_Trends.py
+│           ├── 3_Organisations.py
+│           └── 4_Framing_Analysis.py
 ├── experiments/
-│   ├── outputs/runs/                        # Versioned model artifacts
-│   ├── notebooks/                           # Exploratory analysis
-│   └── mlruns/                              # MLflow experiment store
-└── docs/
-    ├── march_working_plan.md                # Implementation plan
-    ├── design_decisions.md                  # Architecture rationale
-    ├── project_outline.md                   # Project specification
-    └── ethics_and_data_security.md
+│   ├── outputs/runs/                        # Versioned model artifacts (gitignored)
+│   ├── notebooks/                           # Training + EDA notebooks
+│   └── mlruns/                              # MLflow experiment store (gitignored)
+├── tests/
+│   └── test_pipeline.py                     # Smoke tests
+└── .github/workflows/
+    ├── weekly_inference.yml                 # Saturday 8am: sync → inference
+    └── monthly_drift.yml                    # 1st of month: drift monitoring
 ```
-
-Files in **bold structure** exist. Files in regular text are planned (see [implementation plan](docs/march_working_plan.md)).
 
 ---
 
@@ -131,15 +122,14 @@ Files in **bold structure** exist. Files in regular text are planned (see [imple
 
 | Component | Technology |
 |---|---|
-| Topic modelling | scikit-learn NMF, BERTopic |
+| Topic modelling | scikit-learn NMF |
 | NLP preprocessing | spaCy (`en_core_web_sm`) |
-| Vectorisation | TF-IDF (NMF), sentence-transformers (BERTopic) |
+| Vectorisation | TF-IDF |
 | API | FastAPI + Pydantic |
-| Dashboard | Streamlit + Altair |
+| Dashboard | Streamlit |
 | Database | Supabase (PostgreSQL) |
 | Experiment tracking | MLflow |
-| Agent orchestration | LangGraph |
-| LLM observability | Langfuse |
+| CI/CD | GitHub Actions (weekly inference, monthly drift) |
 | Deployment | Docker, Render |
 
 ---
@@ -152,8 +142,8 @@ Every modelling decision in this pipeline is a specification choice. The followi
 |---|---|---|
 | Training corpus | England only | Defines the topic space. Scotland/Ireland measured as deviation. |
 | Preprocessing | spaCy `en_core_web_sm` | English-language model applied to Scottish/Irish policy text. |
-| Model | NMF (baseline) + BERTopic (comparison) | Different models surface different topic structures. |
-| Number of topics (k) | 30 | Varied 5–30 in robustness checks. |
+| Model | NMF (baseline). BERTopic comparison planned. | Different models surface different topic structures. |
+| Number of topics (k) | 30 | Varied 5–50 in coherence sweep. k=25 and k=35 qualitatively reviewed. |
 | TF-IDF parameters | min_df=3, max_df=0.85, max_features=3000 | Controls what vocabulary enters the model. |
 | Topic naming | LLM-generated from top keywords | Reproducible but not neutral. |
 | Source selection | 6 eng, 5 sco, 6 irl organisations | Who is in the corpus determines what the model finds. |
@@ -204,9 +194,9 @@ All parameters in [`config.yaml`](config.yaml):
 
 ```yaml
 data:
-  dataset_name: full_retro
-  source: supabase          # supabase or csv
-  country: eng              # training country
+  dataset_name: eng_training
+  source: supabase
+  training_country: eng
 
 nmf:
   n_topics: 30
@@ -219,6 +209,14 @@ tfidf:
   max_df: 0.85
   max_features: 3000
   ngram_range: [1, 2]
+
+inference:
+  model_type: nmf
+  countries: [eng, sco, irl]
+
+drift:
+  cadence: monthly
+  baseline: eng_training
 ```
 
 ---
@@ -246,6 +244,17 @@ The specification scoring layer is grounded in three independent theoretical tra
 - spaCy `en_core_web_sm` is an English-language model applied to all three jurisdictions. The vocabulary divergence is audited and reported.
 - Topic labels are a specification choice. They are generated by LLM from top keywords, not ground truth.
 - The pipeline finds patterns in language. It cannot determine whether those patterns reflect policy reality or corpus construction. Both possibilities are surfaced.
+
+---
+
+## Planned Extensions
+
+- **BERTopic comparison** — model swap robustness check using sentence-transformer embeddings. Tests whether cross-jurisdictional findings hold under a different modelling approach.
+- **KL divergence analysis** — asymmetric divergence computation across all jurisdiction pairs to quantify normative dominance.
+- **Specification scoring layer** — three computable dimensions (proxy concentration, specification sensitivity, normative divergence) extracted from pipeline outputs.
+- **RAG chatbot** — LangGraph agent allowing stakeholders to query the dataset in natural language, with Langfuse observability and Inspect evaluation.
+- **Build Your Model** — interactive dashboard page where stakeholders change parameters and observe how findings shift.
+- **Cross-domain application** — testing the specification scoring approach in health, criminal justice, and immigration policy.
 
 ---
 

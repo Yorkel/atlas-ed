@@ -261,3 +261,9 @@ experiments/outputs/*
 
 # MLflow local tracking (file-based)
 experiments/mlruns/
+
+*.joblib
+
+experiments/outputs/runs/
+
+.vscode/
