@@ -1,5 +1,5 @@
 data:
-  dataset_name: full_retro
+  dataset_name: eng_training
 
 tfidf:
   min_df: 3

@@ -1,202 +1,200 @@
 """
 drift_monitor.py
 
-Compute weekly drift metrics for NMF inference batches and write
-them to the Supabase `drift_metrics` table.
+Compute Jensen-Shannon divergence between the England training baseline
+and each country's topic distribution per monitoring period.
 
-Compares each inference week's topic distribution, confidence, and
-contestability against the training baseline to detect model-data
-mismatch, confidence degradation, and topic concentration shifts.
+Writes results to Supabase `drift_metrics` table.
 
-Run standalone:
+Usage:
   python -m model_pipeline.inference.drift_monitor
+  python -m model_pipeline.inference.drift_monitor --backfill-only
+
+Requires .env with SUPABASE_URL and SUPABASE_SERVICE_KEY.
 """
 
 from __future__ import annotations
 
+import argparse
 import logging
 import os
-from collections import Counter, defaultdict
+from collections import defaultdict
+from datetime import datetime
 
 import numpy as np
 from dotenv import load_dotenv
 from scipy.spatial.distance import jensenshannon
 from supabase import create_client, Client
 
+from model_pipeline.training.s06_topic_allocation import TOPIC_NAMES
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# ── Config ────────────────────────────────────────────────────────────────────
+CHUNK_SIZE = 1000
+TOPIC_COLS = list(TOPIC_NAMES.values())
+N_TOPICS = len(TOPIC_COLS)
 
-N_TOPICS = 30
-FETCH_PAGE_SIZE = 500
-
-# Alert thresholds (informational, not hard failures)
-THRESHOLD_JS_DIVERGENCE = 0.1
-THRESHOLD_CONFIDENCE_DROP = 0.8       # alert if mean_conf < baseline * this
-THRESHOLD_HIGH_CONTESTABILITY = 0.5   # alert if rate exceeds this
-THRESHOLD_MIN_TOPICS = 15             # alert if fewer topics present
-
-
-# ── Supabase client ───────────────────────────────────────────────────────────
 
 def get_supabase_client() -> Client:
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_SERVICE_KEY")
     if not url or not key:
-        raise EnvironmentError(
-            "SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in your .env file."
-        )
+        raise EnvironmentError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set.")
     return create_client(url, key)
 
 
-# ── Data fetching ─────────────────────────────────────────────────────────────
-
-def _fetch_articles(client: Client, dataset_type: str) -> list[dict]:
-    """Paginated fetch of articles by dataset_type."""
-    columns = "topic_num, dominant_topic_weight, contestability_score"
-    if dataset_type == "inference":
-        columns += ", week_number, week_start, week_end, run_id"
-
-    articles: list[dict] = []
+def fetch_topic_probabilities(client: Client, country: str = None, dataset_type: str = None) -> list[dict]:
+    """Fetch topic_probabilities from articles_topics with optional filters."""
+    articles = []
     page = 0
     while True:
-        start = page * FETCH_PAGE_SIZE
-        response = (
-            client.table("articles")
-            .select(columns)
-            .eq("dataset_type", dataset_type)
-            .not_.is_("topic_num", "null")
-            .range(start, start + FETCH_PAGE_SIZE - 1)
-            .execute()
-        )
-        rows = response.data
-        articles.extend(rows)
-        if len(rows) < FETCH_PAGE_SIZE:
+        start = page * CHUNK_SIZE
+        query = client.table("articles_topics").select("topic_probabilities, country, week_number, dataset_type")
+        if country:
+            query = query.eq("country", country)
+        if dataset_type:
+            query = query.eq("dataset_type", dataset_type)
+
+        response = query.range(start, start + CHUNK_SIZE - 1).execute()
+        articles.extend(response.data)
+        if len(response.data) < CHUNK_SIZE:
             break
         page += 1
     return articles
 
 
-# ── Metric computation ────────────────────────────────────────────────────────
-
 def compute_topic_distribution(articles: list[dict]) -> np.ndarray:
-    """Count topic_num occurrences → 30-element probability vector."""
-    counts = Counter(a["topic_num"] for a in articles)
-    dist = np.zeros(N_TOPICS)
-    for topic_num, count in counts.items():
-        if 0 <= topic_num < N_TOPICS:
-            dist[topic_num] = count
-    total = dist.sum()
+    """Compute average topic distribution from a list of articles with topic_probabilities."""
+    if not articles:
+        return np.zeros(N_TOPICS)
+
+    vectors = []
+    for article in articles:
+        probs = article.get("topic_probabilities", {})
+        if not probs:
+            continue
+        vec = np.array([probs.get(col, 0.0) for col in TOPIC_COLS], dtype=float)
+        vectors.append(vec)
+
+    if not vectors:
+        return np.zeros(N_TOPICS)
+
+    avg = np.mean(vectors, axis=0)
+    total = avg.sum()
     if total > 0:
-        dist = dist / total
-    return dist
+        avg = avg / total
+    return avg
 
 
-def compute_baseline(training_articles: list[dict]) -> dict:
-    """Compute aggregate baseline metrics from training data."""
-    distribution = compute_topic_distribution(training_articles)
-
-    weights = [a["dominant_topic_weight"] for a in training_articles]
-    scores = [a["contestability_score"] for a in training_articles]
-
-    return {
-        "distribution": distribution,
-        "mean_confidence": float(np.mean(weights)),
-        "mean_contestability": float(np.mean(scores)),
-        "high_contestability_rate": float(np.mean([s > 0.5 for s in scores])),
-    }
+def compute_baseline(client: Client) -> np.ndarray:
+    """Compute the England training baseline distribution."""
+    logger.info("Computing England training baseline...")
+    articles = fetch_topic_probabilities(client, country="eng", dataset_type="training")
+    baseline = compute_topic_distribution(articles)
+    logger.info("Baseline computed from %d articles.", len(articles))
+    return baseline
 
 
-def compute_week_metrics(week_articles: list[dict], baseline: dict) -> dict:
-    """Compute all drift metrics for a single inference week."""
-    week_dist = compute_topic_distribution(week_articles)
-
-    # JS divergence (squared — jensenshannon returns the distance/sqrt)
-    js_div = float(jensenshannon(baseline["distribution"], week_dist) ** 2)
-
-    weights = [a["dominant_topic_weight"] for a in week_articles]
-    scores = [a["contestability_score"] for a in week_articles]
-
-    return {
-        "js_divergence": round(js_div, 6),
-        "mean_confidence": round(float(np.mean(weights)), 6),
-        "mean_contestability": round(float(np.mean(scores)), 6),
-        "high_contestability_rate": round(float(np.mean([s > 0.5 for s in scores])), 6),
-        "topic_concentration_hhi": round(float(np.sum(week_dist ** 2)), 6),
-        "n_topics_present": int(np.count_nonzero(week_dist)),
-    }
+def compute_js_divergence(dist: np.ndarray, baseline: np.ndarray) -> float:
+    """Compute JS divergence between two distributions. Returns 0-1."""
+    eps = 1e-10
+    p = dist + eps
+    q = baseline + eps
+    p = p / p.sum()
+    q = q / q.sum()
+    return float(jensenshannon(p, q) ** 2)
 
 
-def check_alerts(metrics: dict, baseline: dict, week_num: int) -> dict:
-    """Apply thresholds, log warnings, add boolean alert flags."""
-    alerts = {}
-
-    # JS divergence
-    alerts["alert_js_divergence"] = metrics["js_divergence"] > THRESHOLD_JS_DIVERGENCE
-    if alerts["alert_js_divergence"]:
-        logger.warning(
-            "  Week %d: JS divergence (%.4f) exceeds threshold (%.2f)",
-            week_num, metrics["js_divergence"], THRESHOLD_JS_DIVERGENCE,
-        )
-
-    # Confidence drop
-    threshold_conf = baseline["mean_confidence"] * THRESHOLD_CONFIDENCE_DROP
-    alerts["alert_confidence_drop"] = metrics["mean_confidence"] < threshold_conf
-    if alerts["alert_confidence_drop"]:
-        logger.warning(
-            "  Week %d: Mean confidence (%.4f) below %.0f%% of baseline (%.4f)",
-            week_num, metrics["mean_confidence"],
-            THRESHOLD_CONFIDENCE_DROP * 100, baseline["mean_confidence"],
-        )
-
-    # High contestability
-    alerts["alert_high_contestability"] = (
-        metrics["high_contestability_rate"] > THRESHOLD_HIGH_CONTESTABILITY
-    )
-    if alerts["alert_high_contestability"]:
-        logger.warning(
-            "  Week %d: High-contestability rate (%.1f%%) exceeds threshold (%.0f%%)",
-            week_num, metrics["high_contestability_rate"] * 100,
-            THRESHOLD_HIGH_CONTESTABILITY * 100,
-        )
-
-    # Low topic coverage
-    alerts["alert_low_topic_coverage"] = (
-        metrics["n_topics_present"] < THRESHOLD_MIN_TOPICS
-    )
-    if alerts["alert_low_topic_coverage"]:
-        logger.warning(
-            "  Week %d: Only %d topics present (threshold: %d)",
-            week_num, metrics["n_topics_present"], THRESHOLD_MIN_TOPICS,
-        )
-
-    return {**metrics, **alerts}
-
-
-def group_by_week(articles: list[dict]) -> dict[int, list[dict]]:
-    """Group inference articles by week_number."""
-    weeks: dict[int, list[dict]] = defaultdict(list)
-    for a in articles:
-        weeks[a["week_number"]].append(a)
-    return dict(weeks)
-
-
-# ── Write to Supabase ─────────────────────────────────────────────────────────
-
-def upsert_metrics(client: Client, rows: list[dict]) -> None:
-    """Upsert drift metrics rows (idempotent on week_number)."""
+def write_drift_metric(client: Client, row: dict) -> None:
+    """Write a single drift metric row to Supabase."""
     try:
-        client.table("drift_metrics").upsert(
-            rows, on_conflict="week_number"
-        ).execute()
+        client.table("drift_metrics").insert(row).execute()
     except Exception as e:
-        logger.error("Failed to upsert drift metrics: %s", e)
-        raise
+        logger.error("Failed to write drift metric: %s", e)
 
 
-# ── Orchestrator ──────────────────────────────────────────────────────────────
+def run_weekly_drift(client: Client, baseline: np.ndarray, run_id: str) -> None:
+    """Compute drift for each country for each week."""
+    articles = fetch_topic_probabilities(client, dataset_type="inference")
+    weekly_articles = [a for a in articles if a.get("week_number") is not None]
+
+    # Group by country and week
+    groups = defaultdict(list)
+    for a in weekly_articles:
+        key = (a["country"], int(a["week_number"]))
+        groups[key].append(a)
+
+    logger.info("Found %d country-week groups.", len(groups))
+
+    for (country, week_num), group_articles in sorted(groups.items()):
+        dist = compute_topic_distribution(group_articles)
+        js = compute_js_divergence(dist, baseline)
+
+        # Count unique dominant topics
+        dominant_topics = set()
+        for a in group_articles:
+            probs = a.get("topic_probabilities", {})
+            if probs:
+                max_topic = max(probs, key=probs.get)
+                dominant_topics.add(max_topic)
+
+        row = {
+            "week_number": week_num,
+            "country": country,
+            "js_divergence": round(js, 6),
+            "article_count": len(group_articles),
+            "unique_topics": len(dominant_topics),
+            "model_type": "nmf",
+            "period_type": "week",
+            "run_id": run_id,
+        }
+
+        write_drift_metric(client, row)
+        logger.info(
+            "  %s week %d: JS=%.4f, articles=%d, unique_topics=%d",
+            country, week_num, js, len(group_articles), len(dominant_topics),
+        )
+
+
+def run_backfill_drift(client: Client, baseline: np.ndarray, run_id: str) -> None:
+    """Compute drift for backfill data (Scotland and Ireland 2023-2025 as single periods)."""
+    for country in ["sco", "irl"]:
+        articles = fetch_topic_probabilities(client, country=country, dataset_type="inference")
+        backfill = [a for a in articles if a.get("week_number") is None]
+
+        if not backfill:
+            logger.info("No backfill data for %s.", country)
+            continue
+
+        dist = compute_topic_distribution(backfill)
+        js = compute_js_divergence(dist, baseline)
+
+        dominant_topics = set()
+        for a in backfill:
+            probs = a.get("topic_probabilities", {})
+            if probs:
+                max_topic = max(probs, key=probs.get)
+                dominant_topics.add(max_topic)
+
+        row = {
+            "week_number": None,
+            "country": country,
+            "js_divergence": round(js, 6),
+            "article_count": len(backfill),
+            "unique_topics": len(dominant_topics),
+            "model_type": "nmf",
+            "period_type": "backfill",
+            "run_id": run_id,
+        }
+
+        write_drift_metric(client, row)
+        logger.info(
+            "  %s backfill: JS=%.4f, articles=%d, unique_topics=%d",
+            country, js, len(backfill), len(dominant_topics),
+        )
+
 
 def main() -> None:
     logging.basicConfig(
@@ -204,75 +202,23 @@ def main() -> None:
         format="%(asctime)s  %(levelname)-8s  %(message)s",
     )
 
+    parser = argparse.ArgumentParser(description="Compute drift metrics per country per period")
+    parser.add_argument("--backfill-only", action="store_true", help="Only compute backfill drift")
+    args = parser.parse_args()
+
     client = get_supabase_client()
+    run_id = datetime.now().strftime("%Y-%m-%d_%H%M%S")
 
-    # 1. Fetch data
-    logger.info("Fetching training articles...")
-    training_articles = _fetch_articles(client, "training")
-    logger.info("Fetched %d training articles.", len(training_articles))
+    baseline = compute_baseline(client)
 
-    logger.info("Fetching inference articles...")
-    inference_articles = _fetch_articles(client, "inference")
-    logger.info("Fetched %d inference articles.", len(inference_articles))
+    logger.info("\n── Backfill drift ──")
+    run_backfill_drift(client, baseline, run_id)
 
-    if not inference_articles:
-        logger.info("No inference articles found. Nothing to do.")
-        return
+    if not args.backfill_only:
+        logger.info("\n── Weekly drift ──")
+        run_weekly_drift(client, baseline, run_id)
 
-    # 2. Compute baseline from training data
-    baseline = compute_baseline(training_articles)
-    logger.info(
-        "Training baseline: mean_confidence=%.4f, mean_contestability=%.4f, "
-        "high_contestability_rate=%.1f%%",
-        baseline["mean_confidence"],
-        baseline["mean_contestability"],
-        baseline["high_contestability_rate"] * 100,
-    )
-
-    # 3. Compute metrics per inference week
-    weeks = group_by_week(inference_articles)
-    rows: list[dict] = []
-
-    for week_num in sorted(weeks):
-        week_articles = weeks[week_num]
-        metrics = compute_week_metrics(week_articles, baseline)
-        metrics = check_alerts(metrics, baseline, week_num)
-
-        # Add week metadata
-        metrics["week_number"] = week_num
-        metrics["week_start"] = week_articles[0].get("week_start")
-        metrics["week_end"] = week_articles[0].get("week_end")
-        metrics["n_articles"] = len(week_articles)
-        metrics["run_id"] = week_articles[0].get("run_id")
-
-        rows.append(metrics)
-
-        logger.info(
-            "  Week %d (%d articles): JS=%.4f  conf=%.4f  contest=%.4f  "
-            "high_contest=%.1f%%  HHI=%.4f  topics=%d",
-            week_num, len(week_articles),
-            metrics["js_divergence"],
-            metrics["mean_confidence"],
-            metrics["mean_contestability"],
-            metrics["high_contestability_rate"] * 100,
-            metrics["topic_concentration_hhi"],
-            metrics["n_topics_present"],
-        )
-
-    # 4. Write to Supabase
-    upsert_metrics(client, rows)
-    logger.info("Drift metrics written for %d weeks.", len(rows))
-
-    # 5. Summary
-    any_alerts = any(
-        row.get("alert_js_divergence") or row.get("alert_confidence_drop")
-        or row.get("alert_high_contestability") or row.get("alert_low_topic_coverage")
-        for row in rows
-    )
-    if any_alerts:
-        logger.warning("Alerts were triggered — review warnings above.")
-    else:
-        logger.info("No alerts triggered. All metrics within expected ranges.")
+    print("\n✅ Drift monitoring complete.")
 
 
 if __name__ == "__main__":

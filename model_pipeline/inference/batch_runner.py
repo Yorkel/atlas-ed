@@ -1,264 +1,174 @@
 """
 batch_runner.py
 
-Simulate week-by-week inference: fetch unprocessed inference articles
-from Supabase grouped by week, send each week to the deployed FastAPI
-/predict endpoint, and write the topic assignments back.
+Run inference on Scotland, Ireland, and England inference data
+through the England-trained NMF model.
+
+Three modes:
+  1. Backfill Ireland (2023–2025, week=None)
+  2. Backfill Scotland (2023–2025, week=None)
+  3. Weekly inference (all three countries, week by week)
 
 Usage:
-  python -m model_pipeline.inference.batch_runner
+  python -m model_pipeline.inference.batch_runner --mode backfill_irl
+  python -m model_pipeline.inference.batch_runner --mode backfill_sco
+  python -m model_pipeline.inference.batch_runner --mode weekly
+  python -m model_pipeline.inference.batch_runner --mode all
 
-Requires .env with SUPABASE_URL and SUPABASE_SERVICE_KEY.
-API_URL defaults to the Render deployment; override via .env if needed.
+Requires:
+  - Saved model in experiments/outputs/runs/<run_id>/
+  - Synced CSVs in data/inference/
+  - .env with SUPABASE_URL and SUPABASE_SERVICE_KEY
 """
 
 from __future__ import annotations
 
+import argparse
 import logging
-import math
-import os
-from collections import defaultdict
+from pathlib import Path
 
-import requests
-from dotenv import load_dotenv
-from requests.adapters import HTTPAdapter
-from supabase import create_client, Client
-from urllib3.util.retry import Retry
-
-load_dotenv()
+import joblib
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# ── Config ────────────────────────────────────────────────────────────────────
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-API_URL = os.getenv("API_URL", "https://atlased-api.onrender.com")
-BATCH_SIZE = 50        # articles per API request
-CHUNK_SIZE = 500       # rows per Supabase upsert
-FETCH_PAGE_SIZE = 500  # pagination when reading from Supabase
+# Default to latest run
+RUNS_DIR = PROJECT_ROOT / "experiments" / "outputs" / "runs"
 
 
-# ── HTTP session with retries ────────────────────────────────────────────────
-
-def _get_http_session() -> requests.Session:
-    """Session with automatic retries and backoff for transient failures."""
-    retry = Retry(
-        total=5,
-        backoff_factor=0.8,
-        status_forcelist=(429, 500, 502, 503, 504),
-        allowed_methods=("POST",),
-    )
-    session = requests.Session()
-    session.mount("https://", HTTPAdapter(max_retries=retry))
-    return session
+def get_latest_run_dir() -> Path:
+    """Get the most recent run directory."""
+    runs = sorted([d for d in RUNS_DIR.iterdir() if d.is_dir()])
+    if not runs:
+        raise FileNotFoundError(f"No runs found in {RUNS_DIR}")
+    return runs[-1]
 
 
-SESSION = _get_http_session()
+def load_model(run_dir: Path):
+    """Load saved NMF model and vectorizer."""
+    nmf_model = joblib.load(run_dir / "nmf_model.joblib")
+    vectorizer = joblib.load(run_dir / "vectorizer.joblib")
+    logger.info("Loaded model from %s", run_dir)
+    return nmf_model, vectorizer
 
 
-# ── Supabase client ──────────────────────────────────────────────────────────
+def load_and_preprocess(csv_path: Path) -> pd.DataFrame:
+    """Load CSV and run preprocessing (s02 cleaning + s03 spaCy)."""
+    from model_pipeline.training.s02_cleaning import run_cleaning
+    from model_pipeline.training.s03_spacy_processing import run_spacy_processing
 
-def get_supabase_client() -> Client:
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_KEY")
-    if not url or not key:
-        raise EnvironmentError(
-            "SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in your .env file."
-        )
-    return create_client(url, key)
+    logger.info("Loading %s", csv_path)
+    df = pd.read_csv(csv_path)
+    logger.info("Raw shape: %s", df.shape)
 
+    # Combine title + text
+    df["text"] = df["title"].fillna("") + "\n\n" + df["text"].fillna("")
+    df["article_date"] = pd.to_datetime(df["article_date"], errors="coerce")
 
-# ── Step 1: Fetch unprocessed inference articles ─────────────────────────────
+    # Preprocess
+    df = run_cleaning(df)
+    df = run_spacy_processing(df)
+    logger.info("After preprocessing: %s", df.shape)
 
-def fetch_unprocessed_articles(client: Client) -> list[dict]:
-    """
-    Fetch all inference articles without a topic assignment.
-    Paginates to avoid the Supabase 1000-row default limit.
-    """
-    articles: list[dict] = []
-    page = 0
-    while True:
-        start = page * FETCH_PAGE_SIZE
-        response = (
-            client.table("articles")
-            .select("id, article_text, article_date, week_start, week_end, week_number")
-            .eq("dataset_type", "inference")
-            .is_("dominant_topic", "null")
-            .order("week_start")
-            .range(start, start + FETCH_PAGE_SIZE - 1)
-            .execute()
-        )
-        rows = response.data
-        articles.extend(rows)
-        if len(rows) < FETCH_PAGE_SIZE:
-            break
-        page += 1
-    logger.info("Fetched %d unprocessed inference articles.", len(articles))
-    return articles
+    return df
 
 
-def group_by_week(articles: list[dict]) -> list[tuple[str, str, int, list[dict]]]:
-    """
-    Group articles by (week_start, week_end, week_number).
-    Returns a sorted list of (week_start, week_end, week_number, articles).
-    """
-    weeks: dict[tuple, list[dict]] = defaultdict(list)
-    for a in articles:
-        key = (a["week_start"], a["week_end"], a["week_number"])
-        weeks[key].append(a)
-    return [
-        (ws, we, wn, arts)
-        for (ws, we, wn), arts in sorted(weeks.items())
-    ]
+def run_inference(df: pd.DataFrame, nmf_model, vectorizer, run_id: str, model_type: str = "nmf") -> None:
+    """Run topic allocation and write results to Supabase."""
+    from model_pipeline.training.s06_topic_allocation import run_topic_allocation
+    from model_pipeline.training.s11_supabase_writer import write_topic_results
+
+    df_alloc = run_topic_allocation(df, nmf_model=nmf_model, vectorizer=vectorizer)
+    write_topic_results(df_alloc, run_id=run_id, model_type=model_type)
 
 
-# ── Step 2: Send batch to API ────────────────────────────────────────────────
+def run_backfill(country: str, nmf_model, vectorizer, run_id: str) -> None:
+    """Run backfill for a single country (2023–2025 data)."""
+    csv_path = PROJECT_ROOT / "data" / "inference" / "backfill" / f"{country}_backfill.csv"
+    if not csv_path.exists():
+        logger.error("File not found: %s. Run sync_from_supabase.py first.", csv_path)
+        return
 
-def predict_batch(articles: list[dict]) -> dict:
-    """
-    POST a batch of articles to /predict.
-    Returns the full API response (predictions, run_id, n_articles).
-    Raises ValueError if the response shape is unexpected.
-    """
-    payload = {
-        "articles": [
-            {"article_id": a["id"], "text": a["article_text"]}
-            for a in articles
-        ]
-    }
-    resp = SESSION.post(f"{API_URL}/predict", json=payload, timeout=120)
-    resp.raise_for_status()
-    data = resp.json()
+    df = load_and_preprocess(csv_path)
 
-    # Validate response shape before writing to database
-    if "run_id" not in data or "predictions" not in data:
-        raise ValueError(f"Malformed API response: missing required fields. Keys: {list(data.keys())}")
+    if df.empty:
+        logger.info("No backfill rows for %s. Skipping.", country)
+        return
 
-    return data
+    logger.info("Running backfill for %s: %d articles", country, len(df))
+    run_inference(df, nmf_model, vectorizer, run_id)
+    logger.info("Backfill complete for %s.", country)
 
 
-# ── Step 3: Build upsert payloads ────────────────────────────────────────────
+def run_weekly(nmf_model, vectorizer, run_id: str) -> None:
+    """Run weekly inference for all three countries, week by week."""
+    weekly_dir = PROJECT_ROOT / "data" / "inference" / "weekly"
+    if not weekly_dir.exists():
+        logger.error("Weekly directory not found: %s. Run sync_from_supabase.py first.", weekly_dir)
+        return
 
-def _entropy(all_weights: dict[str, float]) -> float:
-    """
-    Normalised Shannon entropy across all topic weights.
-    0.0 = all weight on one topic (certain).
-    1.0 = uniform distribution (maximum uncertainty).
+    # Find all weekly CSVs and sort by country then week number
+    csv_files = sorted(weekly_dir.glob("*_week_*.csv"))
+    if not csv_files:
+        logger.info("No weekly CSVs found. Nothing to do.")
+        return
 
-    Replaces the gap-based contestability metric (1 - (top - second))
-    which is structurally broken with 30 topics: NMF spreads weight so
-    thinly that every article scores 0.9+ regardless of actual certainty.
-    Entropy measures the shape of the entire distribution, producing a
-    meaningful spread of scores.
-    """
-    vals = [max(float(v), 1e-12) for v in all_weights.values()]
-    total = sum(vals)
-    probs = [v / total for v in vals]
-    h = -sum(p * math.log(p) for p in probs)
-    max_h = math.log(len(probs)) if probs else 1.0
-    return round(h / max_h, 6)
+    for csv_path in csv_files:
+        # Extract country and week from filename (e.g. eng_week_3.csv)
+        parts = csv_path.stem.split("_week_")
+        country = parts[0]
+        week_num = int(parts[1])
 
+        df = load_and_preprocess(csv_path)
+        if df.empty:
+            logger.info("Empty file: %s. Skipping.", csv_path)
+            continue
 
-def build_payloads(predictions: list[dict], run_id: str) -> list[dict]:
-    """Convert API predictions into Supabase upsert payloads."""
-    return [
-        {
-            "id":                    pred["article_id"],
-            "dataset_type":          "inference",
-            "topic_num":             pred["topic_id"],
-            "dominant_topic":        pred["topic_name"],
-            "dominant_topic_weight": round(pred["confidence"], 6),
-            "topic_probabilities":   pred["all_weights"],
-            "contestability_score":  _entropy(pred["all_weights"]),
-            "run_id":                run_id,
-        }
-        for pred in predictions
-    ]
+        logger.info("Running %s week %d: %d articles", country, week_num, len(df))
+        run_inference(df, nmf_model, vectorizer, run_id)
 
+    logger.info("Weekly inference complete for all countries.")
 
-# ── Step 4: Write results back to Supabase ───────────────────────────────────
-
-def upsert_results(client: Client, payloads: list[dict]) -> int:
-    """Update prediction results row by row. Returns number of failed rows.
-
-    Uses .update().eq() instead of .upsert() because the articles table has a
-    NOT NULL constraint on `url`, and inference payloads don't include url.
-    Upsert treats missing columns as NULL, triggering the constraint.
-    """
-    failed = 0
-    for payload in payloads:
-        row_id = payload["id"]
-        update_data = {k: v for k, v in payload.items() if k != "id"}
-        try:
-            client.table("articles").update(update_data).eq("id", row_id).execute()
-        except Exception as e:
-            logger.error("Update failed for %s: %s", row_id, e)
-            failed += 1
-    return failed
-
-
-# ── Orchestrator ─────────────────────────────────────────────────────────────
 
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s  %(levelname)-8s  %(message)s",
     )
+    logging.getLogger("gensim").setLevel(logging.WARNING)
 
-    client = get_supabase_client()
-
-    # 1. Fetch all unprocessed articles
-    articles = fetch_unprocessed_articles(client)
-    if not articles:
-        logger.info("No unprocessed inference articles. Nothing to do.")
-        return
-
-    # 2. Group by week
-    weekly_groups = group_by_week(articles)
-    logger.info(
-        "Processing %d articles across %d weeks.\n",
-        len(articles), len(weekly_groups),
+    parser = argparse.ArgumentParser(description="Run NMF inference on cross-jurisdiction data")
+    parser.add_argument(
+        "--mode",
+        choices=["backfill_irl", "backfill_sco", "weekly", "all"],
+        default="all",
+        help="Which inference to run",
     )
-
-    total_ok = 0
-    total_fail = 0
-
-    # 3. Process each week sequentially
-    for week_start, week_end, week_num, week_articles in weekly_groups:
-        logger.info(
-            "── Week %d (%s → %s): %d articles ──",
-            week_num, week_start, week_end, len(week_articles),
-        )
-
-        week_payloads: list[dict] = []
-
-        # Send to API in batches
-        for i in range(0, len(week_articles), BATCH_SIZE):
-            batch = week_articles[i : i + BATCH_SIZE]
-            try:
-                result = predict_batch(batch)
-                payloads = build_payloads(result["predictions"], result["run_id"])
-                week_payloads.extend(payloads)
-            except (requests.RequestException, ValueError) as e:
-                logger.error("API call failed for batch: %s", e)
-                total_fail += len(batch)
-
-        # Write this week's results
-        if week_payloads:
-            failed = upsert_results(client, week_payloads)
-            ok = len(week_payloads) - failed
-            total_ok += ok
-            total_fail += failed
-            logger.info(
-                "  Week %d done: %d written, %d failed.\n",
-                week_num, ok, failed,
-            )
-
-    logger.info(
-        "Batch run complete. %d/%d articles processed successfully.",
-        total_ok, len(articles),
+    parser.add_argument(
+        "--run-dir",
+        type=str,
+        default=None,
+        help="Path to model run directory. Defaults to latest.",
     )
-    if total_fail:
-        logger.warning("%d articles failed.", total_fail)
+    args = parser.parse_args()
+
+    # Load model
+    run_dir = Path(args.run_dir) if args.run_dir else get_latest_run_dir()
+    run_id = run_dir.name
+    nmf_model, vectorizer = load_model(run_dir)
+
+    if args.mode == "backfill_irl" or args.mode == "all":
+        run_backfill("irl", nmf_model, vectorizer, run_id)
+
+    if args.mode == "backfill_sco" or args.mode == "all":
+        run_backfill("sco", nmf_model, vectorizer, run_id)
+
+    if args.mode == "weekly" or args.mode == "all":
+        run_weekly(nmf_model, vectorizer, run_id)
+
+    print("\n✅ Batch inference complete.")
 
 
 if __name__ == "__main__":

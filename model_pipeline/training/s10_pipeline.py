@@ -36,7 +36,7 @@ def main() -> None:
     )
     from model_pipeline.training.s08_save_outputs import save_run_outputs, RUNS_DIR, make_run_id
     from model_pipeline.training.s09_mlflow_logging import log_run_to_mlflow
-    from model_pipeline.training.s11_supabase_writer import write_training_results
+    from model_pipeline.training.s11_supabase_writer import write_topic_results
 
     logging.basicConfig(level=logging.INFO)
     logging.getLogger("gensim").setLevel(logging.WARNING)
@@ -61,7 +61,7 @@ def main() -> None:
 
     # S06: analysis-ready dataset
     df_alloc = run_topic_allocation(df, nmf_model=nmf_out.nmf_model, vectorizer=vec_out.vectorizer)
-    analysis_csv = PROJECT_ROOT / "data" / dataset_name / "retro_topics_analysis_ready.csv"
+    analysis_csv = PROJECT_ROOT / "data" / "evaluation_outputs" / "topics_analysis_ready.csv"
     export_analysis_ready_csv(df_alloc, analysis_csv)
 
     # S07: evaluation (DataFrames)
@@ -111,8 +111,8 @@ def main() -> None:
         mlflow_run_id = None
         logger.warning("MLflow logging skipped: %s", e)
 
-    # S11: write training results to Supabase
-    write_training_results(df_alloc, run_id=run_name)
+    # S11: write topic results to Supabase (articles_topics table)
+    write_topic_results(df_alloc, run_id=run_name, model_type="nmf")
 
     print("\n✅ Pipeline complete")
     print("Run name:", run_name)
