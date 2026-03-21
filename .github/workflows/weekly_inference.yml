@@ -2,8 +2,8 @@ name: Weekly Inference Pipeline
 
 on:
   schedule:
-    # Every Thursday at 7pm UTC (1 hour after scraping at 6pm)
-    - cron: '0 19 * * 4'
+    # Every Saturday at 8am UTC
+    - cron: '0 8 * * 6'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
