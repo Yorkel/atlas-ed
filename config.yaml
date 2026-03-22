@@ -32,7 +32,7 @@ countries:
 
   irl:
     dataset_name: irl_training
-    n_topics: 10
+    n_topics: 15                      # coherence peaks at k=10 (0.609) but k=15 (0.590) gives more interpretable topics — broad catch-all topics at k=10 split into distinct themes at k=15
     model_run: null
     tfidf:
       min_df: 3

@@ -65,6 +65,11 @@ def clean_scraped_article(text: Any) -> str:
 
         # Scotland gov_scot — "Media enquiries" trailing block
         r"media enquiries\s*$",
+
+        # Ireland Teaching Council — repeated maintenance/platform notices
+        r"essential maintenance.*?(?:work is now complete|complete essential)",
+        r"closing of x account.*?(?:presence on the x platform|x platform)",
+        r"the teaching council has concluded its presence on the x platform",
     ]
     for pat in block_patterns:
         text = re.sub(pat, " ", text, flags=re.IGNORECASE | re.DOTALL)
@@ -196,6 +201,21 @@ def run_cleaning(df: pd.DataFrame, text_col: str = "text") -> pd.DataFrame:
     out = df.copy()
     out["text_clean"] = out[text_col].apply(clean_scraped_article)
     out["text_clean"] = basic_preprocess_series(out["text_clean"])
+
+    # Drop non-education ESRI articles (newsletters, Shared Island economics, migration)
+    if "title" in out.columns and "source" in out.columns:
+        esri_offtopic = (
+            r"(?i)Newsletter|economic survey|economic outlook|trade protectionist"
+            r"|housing supply|attitudes towards immigration|migration overview"
+            r"|labour market across|gender disparities in the labour market"
+            r"|Income inequality|Economies of Ireland"
+            r"|social and political attitudes|Equality Impact.*Labour"
+        )
+        offtopic_mask = (out["source"] == "esri") & out["title"].fillna("").str.contains(esri_offtopic, regex=True)
+        offtopic_count = offtopic_mask.sum()
+        if offtopic_count > 0:
+            logger.info("Dropping %d off-topic ESRI articles (newsletters, economics)", offtopic_count)
+            out = out[~offtopic_mask].reset_index(drop=True)
 
     # Drop articles with insufficient content (e.g. ADES title-only articles)
     MIN_CONTENT_LENGTH = 200
