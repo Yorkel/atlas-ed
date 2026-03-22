@@ -24,6 +24,8 @@ DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 DATA_PATHS = {
     "eng_training":  DATA_DIR / "training"  / "eng_training.csv",
+    "sco_training":  DATA_DIR / "training"  / "sco_training.csv",
+    "irl_training":  DATA_DIR / "training"  / "irl_training.csv",
     "eng_inference":  DATA_DIR / "inference" / "eng_inference.csv",
     "sco_inference":  DATA_DIR / "inference" / "sco_inference.csv",
     "irl_inference":  DATA_DIR / "inference" / "irl_inference.csv",

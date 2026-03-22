@@ -31,15 +31,28 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from tqdm import tqdm
 
-from model_pipeline.training.s06_topic_allocation import TOPIC_NAMES
-
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 ELECTION_DATE = pd.Timestamp("2024-07-04")
-TOPIC_COLS = list(TOPIC_NAMES.values())
 CHUNK_SIZE = 500
+
+
+def _get_topic_cols(df: pd.DataFrame) -> list[str]:
+    """Detect topic weight columns from the DataFrame.
+
+    Topic columns are those added by s06 — numeric columns that aren't
+    standard metadata or allocation columns.
+    """
+    skip = {
+        "id", "url", "title", "text", "text_clean", "text_final",
+        "article_date", "source", "country", "type", "institution_name",
+        "language", "dataset_type", "week_number", "created_at",
+        "topic_num", "topic_name", "dominant_topic_weight",
+        "year", "month", "tokens_final", "date",
+    }
+    return [c for c in df.columns if c not in skip and df[c].dtype in ("float64", "float32")]
 
 
 # ── Supabase client ───────────────────────────────────────────────────────────
@@ -56,13 +69,13 @@ def get_supabase_client() -> Client:
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _compute_contestability(row: pd.Series) -> float:
+def _compute_contestability(row: pd.Series, topic_cols: list[str]) -> float:
     """
     Normalised Shannon entropy across all topic weights.
     0.0 = all weight on one topic (certain).
     1.0 = uniform distribution (maximum uncertainty).
     """
-    weights = row[TOPIC_COLS].values.astype(float)
+    weights = row[topic_cols].values.astype(float)
     weights = np.maximum(weights, 1e-12)
     total = weights.sum()
     probs = weights / total
@@ -71,8 +84,8 @@ def _compute_contestability(row: pd.Series) -> float:
     return float(round(h / max_h, 6))
 
 
-def _build_topic_probabilities(row: pd.Series) -> dict:
-    return {col: round(float(row[col]), 6) for col in TOPIC_COLS}
+def _build_topic_probabilities(row: pd.Series, topic_cols: list[str]) -> dict:
+    return {col: round(float(row[col]), 6) for col in topic_cols}
 
 
 def _election_period(date) -> str:
@@ -101,12 +114,13 @@ def write_topic_results(
         run_id:      The run directory name (e.g. "2026-03-19_160734").
         model_type:  "nmf" or "bertopic".
     """
-    missing_cols = [c for c in TOPIC_COLS if c not in df_alloc.columns]
-    if missing_cols:
+    topic_cols = _get_topic_cols(df_alloc)
+    if not topic_cols:
         raise ValueError(
-            f"df_alloc is missing topic weight columns: {missing_cols[:5]}... "
+            "No topic weight columns found in df_alloc. "
             "Ensure s06 has run before s11."
         )
+    logger.info("Detected %d topic columns: %s...", len(topic_cols), topic_cols[:3])
 
     client = get_supabase_client()
 
@@ -141,8 +155,8 @@ def write_topic_results(
             "topic_num":              int(row.topic_num),
             "dominant_topic":         str(row.topic_name),
             "dominant_topic_weight":  round(float(row.dominant_topic_weight), 6),
-            "topic_probabilities":    _build_topic_probabilities(row_series),
-            "contestability_score":   round(_compute_contestability(row_series), 6),
+            "topic_probabilities":    _build_topic_probabilities(row_series, topic_cols),
+            "contestability_score":   round(_compute_contestability(row_series, topic_cols), 6),
             "text_clean":             str(row.text_clean) if pd.notna(getattr(row, "text_clean", None)) else None,
             "article_text":           str(row.text) if pd.notna(getattr(row, "text", None)) else None,
             "election_period":        _election_period(getattr(row, "article_date", None)),

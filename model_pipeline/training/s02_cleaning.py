@@ -35,6 +35,7 @@ def clean_scraped_article(text: Any) -> str:
 
     # ======== STAGE 1: STRUCTURAL FIXES (before removal) ========
     text = unicodedata.normalize("NFKC", text)
+    text = re.sub(r"[\u200b\u200c\u200d\ufeff]", "", text)  # zero-width chars (GTCS markdown artefacts)
     text = re.sub(r"(\w+)-\s*\n\s*(\w+)", r"\1\2", text)  # fix hyphenation
     text = re.sub(r"\n+", " ", text)  # collapse newlines
 
@@ -51,6 +52,19 @@ def clean_scraped_article(text: Any) -> str:
         r"cookie preference.*?(?:settings|accept)",
         r"privacy policy.*?(?:here|terms)",
         r"accessibility statement.*?(?:here|contact)",
+
+        # GOV.UK footer blocks — everything from these markers tends to be boilerplate
+        r"updates to this page.*?(?:first published|sign up for emails)",
+        r"sign up for emails or print this page.*?$",
+        r"related content.*?$",
+        r"explore the topic.*?$",
+        r"dfe media enquiries.*?$",
+
+        # FFT newsletter signup
+        r"want to stay up-to-date with the latest research from fft education datalab\?.*?newsletter\.?",
+
+        # Scotland gov_scot — "Media enquiries" trailing block
+        r"media enquiries\s*$",
     ]
     for pat in block_patterns:
         text = re.sub(pat, " ", text, flags=re.IGNORECASE | re.DOTALL)
@@ -79,6 +93,15 @@ def clean_scraped_article(text: Any) -> str:
         r"find out more",
         r"assistive technology",
         r"accessible format",
+
+        # GOV.UK specific phrases
+        r"applies to england",
+        r"documents\s+(?:pdf|html)(?:\s*,\s*\d+\s*(?:kb|mb)\s*,\s*\d+\s*pages?)?",
+        r"central newsdesk\s*-\s*for journalists\s*\d[\d\s]+",
+
+        # SERA event registration
+        r"sign up for the event here",
+        r"scan the qr code",
     ]
     for pat in phrase_patterns:
         text = re.sub(pat, " ", text, flags=re.IGNORECASE)
@@ -174,7 +197,17 @@ def run_cleaning(df: pd.DataFrame, text_col: str = "text") -> pd.DataFrame:
     out["text_clean"] = out[text_col].apply(clean_scraped_article)
     out["text_clean"] = basic_preprocess_series(out["text_clean"])
 
-    # Quick sanity: how many empty strings did we create?
+    # Drop articles with insufficient content (e.g. ADES title-only articles)
+    MIN_CONTENT_LENGTH = 200
+    short_mask = out["text_clean"].str.len() < MIN_CONTENT_LENGTH
+    short_count = short_mask.sum()
+    if short_count > 0:
+        logger.info(
+            "Dropping %d articles with fewer than %d chars after cleaning",
+            short_count, MIN_CONTENT_LENGTH,
+        )
+        out = out[~short_mask].reset_index(drop=True)
+
     empty_count = (out["text_clean"].str.len() == 0).sum()
     logger.info("Step 02 (cleaning): complete. Output shape=%s", out.shape)
     logger.info("Empty cleaned texts: %d", empty_count)

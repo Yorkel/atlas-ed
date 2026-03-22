@@ -4,8 +4,8 @@ sync_from_supabase.py
 Pulls data from Supabase `articles_raw` and saves as local CSVs.
 Structure:
     data/training/eng_training.csv
-    data/inference/backfill/sco_backfill.csv
-    data/inference/backfill/irl_backfill.csv
+    data/training/sco_training.csv
+    data/training/irl_training.csv
     data/inference/weekly/eng_week_1.csv ... eng_week_N.csv
     data/inference/weekly/sco_week_1.csv ... sco_week_N.csv
     data/inference/weekly/irl_week_1.csv ... irl_week_N.csv
@@ -13,6 +13,7 @@ Structure:
 Usage:
     python sync_from_supabase.py              # sync everything
     python sync_from_supabase.py --weekly     # only sync weekly inference (faster)
+    python sync_from_supabase.py --training   # only sync training data
 """
 
 import argparse
@@ -73,22 +74,11 @@ def save_csv(df: pd.DataFrame, path: Path, label: str):
 
 # ── Sync functions ────────────────────────────────────────────────────────────
 def sync_training(client):
-    """Pull England training data."""
+    """Pull training data for all three countries."""
     print("\n── Training ──")
-    df = fetch_all(client, {"country": "eng", "dataset_type": "training"})
-    save_csv(df, TRAINING_DIR / "eng_training.csv", "eng/training")
-
-
-def sync_backfill(client):
-    """Pull backfill inference data (2023-2025, week_number=None)."""
-    print("\n── Backfill ──")
-    for country in ["sco", "irl"]:
-        df = fetch_all(client, {
-            "country": country,
-            "dataset_type": "inference",
-            "week_number": None,
-        })
-        save_csv(df, BACKFILL_DIR / f"{country}_backfill.csv", f"{country}/backfill")
+    for country in ["eng", "sco", "irl"]:
+        df = fetch_all(client, {"country": country, "dataset_type": "training"})
+        save_csv(df, TRAINING_DIR / f"{country}_training.csv", f"{country}/training")
 
 
 def sync_weekly(client):
@@ -122,15 +112,17 @@ def sync_weekly(client):
 def main():
     parser = argparse.ArgumentParser(description="Sync data from Supabase to local CSVs")
     parser.add_argument("--weekly", action="store_true", help="Only sync weekly inference data")
+    parser.add_argument("--training", action="store_true", help="Only sync training data")
     args = parser.parse_args()
 
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
     if args.weekly:
         sync_weekly(client)
+    elif args.training:
+        sync_training(client)
     else:
         sync_training(client)
-        sync_backfill(client)
         sync_weekly(client)
 
     print("\nDone.")

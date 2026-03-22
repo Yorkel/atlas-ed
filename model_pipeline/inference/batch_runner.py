@@ -1,23 +1,18 @@
 """
 batch_runner.py
 
-Run inference on Scotland, Ireland, and England inference data
-through the England-trained NMF model.
+Run inference on all three countries using their own trained NMF models.
 
-Three modes:
-  1. Backfill Ireland (2023–2025, week=None)
-  2. Backfill Scotland (2023–2025, week=None)
-  3. Weekly inference (all three countries, week by week)
+Each country loads its own model (specified in config.yaml countries.<country>.model_run).
+Weekly inference applies each country's model to that country's new articles.
 
 Usage:
-  python -m model_pipeline.inference.batch_runner --mode backfill_irl
-  python -m model_pipeline.inference.batch_runner --mode backfill_sco
   python -m model_pipeline.inference.batch_runner --mode weekly
   python -m model_pipeline.inference.batch_runner --mode all
 
 Requires:
-  - Saved model in experiments/outputs/runs/<run_id>/
-  - Synced CSVs in data/inference/
+  - Saved models in experiments/outputs/runs/<run_id>/
+  - Synced CSVs in data/
   - .env with SUPABASE_URL and SUPABASE_SERVICE_KEY
 """
 
@@ -29,21 +24,49 @@ from pathlib import Path
 
 import joblib
 import pandas as pd
+import yaml
 
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-# Default to latest run
 RUNS_DIR = PROJECT_ROOT / "experiments" / "outputs" / "runs"
 
+with open(PROJECT_ROOT / "config.yaml") as _f:
+    CONFIG = yaml.safe_load(_f)
 
-def get_latest_run_dir() -> Path:
-    """Get the most recent run directory."""
-    runs = sorted([d for d in RUNS_DIR.iterdir() if d.is_dir()])
-    if not runs:
-        raise FileNotFoundError(f"No runs found in {RUNS_DIR}")
-    return runs[-1]
+
+def get_model_dir(country: str) -> Path:
+    """Get the model run directory for a country from config."""
+    country_cfg = CONFIG["countries"][country]
+    model_run = country_cfg.get("model_run")
+
+    if model_run:
+        run_dir = RUNS_DIR / model_run
+        if not run_dir.exists():
+            raise FileNotFoundError(
+                f"Model run '{model_run}' for {country} not found at {run_dir}. "
+                "Check countries.<country>.model_run in config.yaml."
+            )
+        return run_dir
+
+    # Fallback: find latest run for this country by prefix
+    prefix = f"{country}_" if country != "eng" else ""
+    candidates = sorted([
+        d for d in RUNS_DIR.iterdir()
+        if d.is_dir() and (d.name.startswith(prefix) if prefix else not any(
+            d.name.startswith(p) for p in ["sco_", "irl_"]
+        ))
+    ])
+    if not candidates:
+        raise FileNotFoundError(
+            f"No model runs found for {country}. Train the model first, "
+            "then set countries.<country>.model_run in config.yaml."
+        )
+    logger.warning(
+        "No model_run set for %s in config.yaml, using latest: %s",
+        country, candidates[-1].name,
+    )
+    return candidates[-1]
 
 
 def load_model(run_dir: Path):
@@ -84,12 +107,16 @@ def run_inference(df: pd.DataFrame, nmf_model, vectorizer, run_id: str, model_ty
     write_topic_results(df_alloc, run_id=run_id, model_type=model_type)
 
 
-def run_backfill(country: str, nmf_model, vectorizer, run_id: str) -> None:
-    """Run backfill for a single country (2023–2025 data)."""
-    csv_path = PROJECT_ROOT / "data" / "inference" / "backfill" / f"{country}_backfill.csv"
+def run_backfill(country: str) -> None:
+    """Run backfill for a single country using its own model."""
+    csv_path = PROJECT_ROOT / "data" / "training" / f"{country}_training.csv"
     if not csv_path.exists():
         logger.error("File not found: %s. Run sync_from_supabase.py first.", csv_path)
         return
+
+    run_dir = get_model_dir(country)
+    run_id = run_dir.name
+    nmf_model, vectorizer = load_model(run_dir)
 
     df = load_and_preprocess(csv_path)
 
@@ -97,37 +124,54 @@ def run_backfill(country: str, nmf_model, vectorizer, run_id: str) -> None:
         logger.info("No backfill rows for %s. Skipping.", country)
         return
 
-    logger.info("Running backfill for %s: %d articles", country, len(df))
+    logger.info("Running backfill for %s: %d articles (model: %s)", country, len(df), run_id)
     run_inference(df, nmf_model, vectorizer, run_id)
     logger.info("Backfill complete for %s.", country)
 
 
-def run_weekly(nmf_model, vectorizer, run_id: str) -> None:
-    """Run weekly inference for all three countries, week by week."""
+def run_weekly() -> None:
+    """Run weekly inference — each country uses its own model."""
     weekly_dir = PROJECT_ROOT / "data" / "inference" / "weekly"
     if not weekly_dir.exists():
         logger.error("Weekly directory not found: %s. Run sync_from_supabase.py first.", weekly_dir)
         return
 
-    # Find all weekly CSVs and sort by country then week number
     csv_files = sorted(weekly_dir.glob("*_week_*.csv"))
     if not csv_files:
         logger.info("No weekly CSVs found. Nothing to do.")
         return
 
+    # Load models once per country
+    models = {}
+    for country in CONFIG["countries"]:
+        try:
+            run_dir = get_model_dir(country)
+            models[country] = {
+                "nmf_model": joblib.load(run_dir / "nmf_model.joblib"),
+                "vectorizer": joblib.load(run_dir / "vectorizer.joblib"),
+                "run_id": run_dir.name,
+            }
+            logger.info("Loaded %s model from %s", country, run_dir.name)
+        except FileNotFoundError as e:
+            logger.error("Skipping %s: %s", country, e)
+
     for csv_path in csv_files:
-        # Extract country and week from filename (e.g. eng_week_3.csv)
         parts = csv_path.stem.split("_week_")
         country = parts[0]
         week_num = int(parts[1])
+
+        if country not in models:
+            logger.warning("No model for %s, skipping %s", country, csv_path.name)
+            continue
 
         df = load_and_preprocess(csv_path)
         if df.empty:
             logger.info("Empty file: %s. Skipping.", csv_path)
             continue
 
-        logger.info("Running %s week %d: %d articles", country, week_num, len(df))
-        run_inference(df, nmf_model, vectorizer, run_id)
+        m = models[country]
+        logger.info("Running %s week %d: %d articles (model: %s)", country, week_num, len(df), m["run_id"])
+        run_inference(df, m["nmf_model"], m["vectorizer"], m["run_id"])
 
     logger.info("Weekly inference complete for all countries.")
 
@@ -142,33 +186,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run NMF inference on cross-jurisdiction data")
     parser.add_argument(
         "--mode",
-        choices=["backfill_irl", "backfill_sco", "weekly", "all"],
+        choices=["backfill_irl", "backfill_sco", "backfill_eng", "weekly", "all"],
         default="all",
         help="Which inference to run",
     )
-    parser.add_argument(
-        "--run-dir",
-        type=str,
-        default=None,
-        help="Path to model run directory. Defaults to latest.",
-    )
     args = parser.parse_args()
 
-    # Load model
-    run_dir = Path(args.run_dir) if args.run_dir else get_latest_run_dir()
-    run_id = run_dir.name
-    nmf_model, vectorizer = load_model(run_dir)
+    if args.mode.startswith("backfill_"):
+        country = args.mode.split("_")[1]
+        run_backfill(country)
+    elif args.mode == "weekly":
+        run_weekly()
+    elif args.mode == "all":
+        for country in CONFIG["countries"]:
+            run_backfill(country)
+        run_weekly()
 
-    if args.mode == "backfill_irl" or args.mode == "all":
-        run_backfill("irl", nmf_model, vectorizer, run_id)
-
-    if args.mode == "backfill_sco" or args.mode == "all":
-        run_backfill("sco", nmf_model, vectorizer, run_id)
-
-    if args.mode == "weekly" or args.mode == "all":
-        run_weekly(nmf_model, vectorizer, run_id)
-
-    print("\n✅ Batch inference complete.")
+    print("\nBatch inference complete.")
 
 
 if __name__ == "__main__":

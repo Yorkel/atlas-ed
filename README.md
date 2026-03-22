@@ -11,8 +11,8 @@ AtlasED is a production NLP pipeline that analyses education policy discourse ac
 The pipeline uses four models to analyse and compare policy discourse:
 
 - **M1:** NMF trained on England's corpus (k=30) — England's debate in its own vocabulary
-- **M2:** NMF trained on Scotland's corpus (k=[TBD]) — Scotland's debate in its own vocabulary
-- **M3:** NMF trained on Ireland's corpus (k=[TBD]) — Ireland's debate in its own vocabulary
+- **M2:** NMF trained on Scotland's corpus (k=15) — Scotland's debate in its own vocabulary
+- **M3:** NMF trained on Ireland's corpus (k=15) — Ireland's debate in its own vocabulary
 - **M4:** BERTopic trained on all three countries combined — shared topics across jurisdictions using semantic embeddings
 
 Topic alignment via cosine similarity enables cross-model comparison despite different topic counts. Each country's debate is represented on its own terms; the combined model shows where debates converge and diverge. An earlier England-as-baseline design (training on England, applying to Scotland/Ireland as inference) revealed that England's vocabulary acted as the implicit norm — this finding is retained as specification sensitivity evidence but is not the primary analytical framework.
@@ -29,18 +29,20 @@ Topic alignment via cosine similarity enables cross-model comparison despite dif
 
 ## Data
 
-**~6,000 documents** from government departments, think tanks, media outlets, professional bodies, and research organisations across three jurisdictions. Updated weekly.
+**~5,000 documents** (post-cleaning) from government departments, think tanks, media outlets, professional bodies, and research organisations across three jurisdictions. Updated weekly.
 
-| Jurisdiction | Training (2023–2025) | Weekly inference (2026) | Model |
-|---|---|---|---|
-| **England** | 3,943 articles | 231 (weeks 1–11) | M1: NMF k=30 |
-| **Scotland** | 511 articles | 120 (weeks 1–11) | M2: NMF k=[TBD] |
-| **Ireland** | 1,036 articles | 67 (weeks 1–11) | M3: NMF k=[TBD] |
-| **Combined** | ~5,490 articles | — | M4: BERTopic |
+| Jurisdiction | Raw | Training (post-cleaning) | Weekly inference (2026) | Model |
+|---|---|---|---|---|
+| **England** | 3,943 | 3,931 | 231 (weeks 1–11) | M1: NMF k=30 |
+| **Scotland** | 511 | 481 | 120 (weeks 1–11) | M2: NMF k=15 |
+| **Ireland** | 1,040 | 575 | 67 (weeks 1–11) | M3: NMF k=10 |
+| **Combined** | ~5,494 | ~4,987 | — | M4: BERTopic |
+
+Cleaning removes boilerplate (GOV.UK footers, FFT newsletter signups, gov.scot media enquiries footers) and drops articles with <200 characters of content after cleaning (e.g., gov.ie PDF landing pages with no inline text, ADES title-only articles). See the specification choices log for details on what is removed and why.
 
 **England sources:** SchoolsWeek, UK Government, FFT Education Datalab, Education Policy Institute, Nuffield Foundation, Federation of Education.
 **Scotland sources:** Scottish Government, Children in Scotland, GTCS, ADES, SERA.
-**Ireland sources:** Irish Government, ESRI, Teaching Council, Education Research Centre, Education Matters, RTE.
+**Ireland sources:** Irish Government, ESRI, Teaching Council, Education Research Centre, Education Matters.
 
 Country is derived from the source organisation, not hardcoded.
 
@@ -53,9 +55,9 @@ Storage: Supabase/PostgreSQL. Raw text in `articles_raw`, topic assignments in `
 ### Per-country NMF models (M1, M2, M3)
 Each country gets its own NMF model trained on its own corpus with k determined by coherence sweep. This means each jurisdiction's debate is represented in its own vocabulary — Scotland discovers Scottish topics, Ireland discovers Irish topics, neither is measured as deviation from England.
 
-- **M1 (England):** 3,943 articles, k=30 (confirmed by coherence sweep and stability testing)
-- **M2 (Scotland):** 511 articles, k=[TBD] (coherence sweep pending)
-- **M3 (Ireland):** 1,036 articles, k=[TBD] (coherence sweep pending)
+- **M1 (England):** 3,931 articles (post-cleaning), k=30 (confirmed by coherence sweep and stability testing)
+- **M2 (Scotland):** 481 articles (post-cleaning), k=15 (coherence sweep completed — coherence plateaus at k=15, 0.640)
+- **M3 (Ireland):** 575 articles (post-cleaning), k=10 (coherence drops above k=10 due to gov.ie corpus homogeneity)
 
 ### Combined BERTopic model (M4)
 BERTopic trained on all three countries' corpora combined. Uses semantic embeddings which can bridge vocabulary gaps (e.g. clusters "ASN" with "SEND") that NMF's bag-of-words approach treats as separate. Auto-discovers topic count. [TBD — not yet built]
@@ -93,11 +95,11 @@ AM1_topic_modelling/
 ├── run_monthly_drift.py                     # Monthly drift monitoring
 ├── Dockerfile                               # API deployment container
 ├── data/
-│   ├── training/                            # England training CSVs (synced, gitignored)
-│   ├── inference/                           # Backfill + weekly CSVs (synced, gitignored)
+│   ├── training/                            # Training CSVs — all three countries (synced, gitignored)
+│   ├── inference/                           # Weekly inference CSVs (synced, gitignored)
 │   └── evaluation_outputs/                  # Coherence, stability, topic comparison CSVs
 ├── model_pipeline/
-│   ├── training/                            # Model training (England)
+│   ├── training/                            # Model training (all countries)
 │   │   ├── s01_data_loader.py               #   Load from CSV
 │   │   ├── s02_cleaning.py                  #   Structural text cleaning
 │   │   ├── s03_spacy_processing.py          #   Lemmatisation, POS filtering, stopwords
@@ -158,7 +160,7 @@ Every modelling decision in this pipeline is a specification choice. The followi
 
 | Choice | Current setting | Why it matters |
 |---|---|---|
-| Training corpus | England only | Defines the topic space. Scotland/Ireland measured as deviation. |
+| Training corpus | Per-country (England, Scotland, Ireland each trained separately) | Each country's topic space reflects its own vocabulary. |
 | Preprocessing | spaCy `en_core_web_sm` | English-language model applied to Scottish/Irish policy text. |
 | Model | NMF (baseline). BERTopic comparison planned. | Different models surface different topic structures. |
 | Number of topics (k) | 30 | Varied 5–50 in coherence sweep. k=25 and k=35 qualitatively reviewed. |

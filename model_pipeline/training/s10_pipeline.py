@@ -4,11 +4,14 @@ s10_pipeline.py
 Step 10: End-to-end training pipeline runner (S01 → S09)
 
 Run:
-python -m model_pipeline.training.s10_pipeline
+    python -m model_pipeline.training.s10_pipeline                  # train default country (from config)
+    python -m model_pipeline.training.s10_pipeline --country sco    # train specific country
+    python -m model_pipeline.training.s10_pipeline --all            # train all three countries
 """
 
 from __future__ import annotations
 
+import argparse
 import logging
 from pathlib import Path
 
@@ -21,15 +24,13 @@ with open(PROJECT_ROOT / "config.yaml") as _f:
     CONFIG = yaml.safe_load(_f)
 
 
-def main() -> None:
-    import logging
-
+def train_country(country: str) -> None:
     from model_pipeline.training.s01_data_loader import load_articles
     from model_pipeline.training.s02_cleaning import run_cleaning
     from model_pipeline.training.s03_spacy_processing import run_spacy_processing
-    from model_pipeline.training.s04_vectorisation import run_vectorisation
+    from model_pipeline.training.s04_vectorisation import run_vectorisation, build_vectorizer
     from model_pipeline.training.s05_nmf_training import train_nmf
-    from model_pipeline.training.s06_topic_allocation import run_topic_allocation, export_analysis_ready_csv
+    from model_pipeline.training.s06_topic_allocation import run_topic_allocation, export_analysis_ready_csv, load_topic_names, make_generic_topic_names
     from model_pipeline.training.s07_evaluation import (
         evaluate_coherence_over_topic_range,
         evaluate_topic_stability,
@@ -38,31 +39,42 @@ def main() -> None:
     from model_pipeline.training.s09_mlflow_logging import log_run_to_mlflow
     from model_pipeline.training.s11_supabase_writer import write_topic_results
 
-    logging.basicConfig(level=logging.INFO)
-    logging.getLogger("gensim").setLevel(logging.WARNING)
+    country_cfg = CONFIG["countries"][country]
+    dataset_name = country_cfg["dataset_name"]
+    n_topics = country_cfg["n_topics"]
+    tfidf_cfg = country_cfg["tfidf"]
 
-    dataset_name = CONFIG["data"]["dataset_name"]
-    run_name = make_run_id()
+    run_name = make_run_id(country)
     run_dir = RUNS_DIR / run_name
-    logger.info("Pipeline run_name=%s", run_name)
+    logger.info("Pipeline run_name=%s country=%s n_topics=%d", run_name, country, n_topics)
 
     # S01–S05
     df = load_articles(dataset_name)
     df = run_cleaning(df)
     df = run_spacy_processing(df)
-    vec_out = run_vectorisation(df)
+    vectorizer = build_vectorizer(
+        min_df=tfidf_cfg["min_df"],
+        max_df=tfidf_cfg["max_df"],
+        max_features=tfidf_cfg["max_features"],
+        ngram_range=tuple(tfidf_cfg["ngram_range"]),
+    )
+    vec_out = run_vectorisation(df, vectorizer=vectorizer)
     nmf_out = train_nmf(
         vec_out.X,
-        n_topics=CONFIG["nmf"]["n_topics"],
+        n_topics=n_topics,
         random_state=CONFIG["nmf"]["random_state"],
         init=CONFIG["nmf"]["init"],
         max_iter=CONFIG["nmf"]["max_iter"],
     )
 
     # S06: analysis-ready dataset
-    df_alloc = run_topic_allocation(df, nmf_model=nmf_out.nmf_model, vectorizer=vec_out.vectorizer)
-    analysis_csv = PROJECT_ROOT / "data" / "evaluation_outputs" / "topics_analysis_ready.csv"
-    export_analysis_ready_csv(df_alloc, analysis_csv)
+    topic_names = load_topic_names(country) or make_generic_topic_names(n_topics)
+    df_alloc = run_topic_allocation(
+        df, nmf_model=nmf_out.nmf_model, vectorizer=vec_out.vectorizer,
+        topic_names=topic_names,
+    )
+    analysis_csv = PROJECT_ROOT / "data" / "evaluation_outputs" / f"topics_analysis_ready_{country}.csv"
+    export_analysis_ready_csv(df_alloc, analysis_csv, topic_names=topic_names)
 
     # S07: evaluation (DataFrames)
     coh_df = evaluate_coherence_over_topic_range(
@@ -77,7 +89,7 @@ def main() -> None:
     )
     stab_df = evaluate_topic_stability(
         X=vec_out.X,
-        n_topics=CONFIG["nmf"]["n_topics"],
+        n_topics=n_topics,
         seeds=CONFIG["evaluation"]["stability_seeds"],
     )
 
@@ -114,12 +126,37 @@ def main() -> None:
     # S11: write topic results to Supabase (articles_topics table)
     write_topic_results(df_alloc, run_id=run_name, model_type="nmf")
 
-    print("\n✅ Pipeline complete")
+    # Update config.yaml with the new model_run for this country
+    config_path = PROJECT_ROOT / "config.yaml"
+    with open(config_path) as f:
+        config_data = yaml.safe_load(f)
+    config_data["countries"][country]["model_run"] = run_name
+    with open(config_path, "w") as f:
+        yaml.dump(config_data, f, default_flow_style=False, sort_keys=False)
+    logger.info("Updated config.yaml: countries.%s.model_run = %s", country, run_name)
+
+    print(f"\nPipeline complete for {country}")
     print("Run name:", run_name)
     print("Analysis CSV:", analysis_csv.as_posix())
     print("Artifacts dir:", run_dir.as_posix())
     print("MLflow run_id:", mlflow_run_id)
-    print("MLflow store:", (PROJECT_ROOT / "experiments" / "mlruns").as_posix())
+
+
+def main() -> None:
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger("gensim").setLevel(logging.WARNING)
+
+    parser = argparse.ArgumentParser(description="Train NMF topic model")
+    parser.add_argument("--country", choices=["eng", "sco", "irl"], help="Country to train")
+    parser.add_argument("--all", action="store_true", help="Train all three countries")
+    args = parser.parse_args()
+
+    if args.all:
+        for country in CONFIG["countries"]:
+            train_country(country)
+    else:
+        country = args.country or CONFIG["training_country"]
+        train_country(country)
 
 
 if __name__ == "__main__":

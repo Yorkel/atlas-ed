@@ -68,8 +68,9 @@ class RunMetadata:
     dominant_topic_weight_max: float
 
 
-def make_run_id() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M%S")
+def make_run_id(country: str = "") -> str:
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M%S")
+    return f"{country}_{timestamp}" if country else timestamp
 
 
 def _safe_float(x: Any) -> float:

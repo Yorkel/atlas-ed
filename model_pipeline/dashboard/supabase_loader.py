@@ -98,7 +98,8 @@ def _transform(df: pd.DataFrame) -> pd.DataFrame:
     })
 
     df["article_date"] = pd.to_datetime(df["article_date"], errors="coerce")
-    df["country"] = "England"
+    country_map = {"eng": "England", "sco": "Scotland", "irl": "Ireland"}
+    df["country"] = df["country"].map(country_map).fillna(df["country"])
     df["topic_name"] = df["topic_name"].str.replace("_", " ").str.title()
     df["source"] = df["source"].str.upper()
     df["year"] = df["article_date"].dt.year

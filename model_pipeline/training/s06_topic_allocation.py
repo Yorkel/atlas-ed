@@ -16,21 +16,48 @@ Output:
     - topic_num
     - topic_name
     - dominant_topic_weight
-    - 30 continuous topic weight columns (named exactly like notebook)
+    - N continuous topic weight columns (named via topic_names)
     - year, month
-- writes CSV: data/full_retro/retro_topics_analysis_ready.csv
+- writes CSV: data/evaluation_outputs/topics_analysis_ready_<country>.csv
 """
 
+import json
 import logging
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-TOPIC_NAMES: Dict[int, str] = {
+
+def load_topic_names(country: str) -> Dict[int, str]:
+    """Load topic names from LLM review JSON or run directory."""
+    # Try LLM review file first
+    llm_path = PROJECT_ROOT / "data" / "evaluation_outputs" / f"llm_{country}_topic_review.json"
+    if country == "eng":
+        llm_path = PROJECT_ROOT / "data" / "evaluation_outputs" / "llm_topic_review.json"
+
+    if llm_path.exists():
+        with open(llm_path) as f:
+            reviews = json.load(f)
+        names = {item["topic"]: item["suggested_name"] for item in reviews}
+        logger.info("Loaded %d topic names from %s", len(names), llm_path.name)
+        return names
+
+    logger.warning("No topic names found for %s — using generic names", country)
+    return {}
+
+
+def make_generic_topic_names(n_topics: int) -> Dict[int, str]:
+    """Generate generic topic_0, topic_1, ... names."""
+    return {i: f"topic_{i}" for i in range(n_topics)}
+
+
+# Default England names for backward compatibility
+TOPIC_NAMES: Dict[int, str] = load_topic_names("eng") or {
     0: "child_and_family_support",
     1: "academy_finance_and_oversight",
     2: "mat_governance",
