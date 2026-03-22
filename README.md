@@ -8,7 +8,14 @@ AtlasED is a production NLP pipeline that analyses education policy discourse ac
 
 2. **Makes the specification choices behind the analysis visible and auditable** — surfacing how data selection, model selection, parameterisation, and preprocessing decisions shape what the analysis finds, with the goal of informing guidelines on how AI analysis should be used responsibly in public policy.
 
-The pipeline trains on England's policy corpus as a baseline. Scottish and Irish corpora are passed through the England-trained model as out-of-distribution inference. The resulting distributional drift is not a bug — it is the finding: England's construct definitions act as the implicit norm, and the drift scores are a live, computable measure of that normative divergence.
+The pipeline uses four models to analyse and compare policy discourse:
+
+- **M1:** NMF trained on England's corpus (k=30) — England's debate in its own vocabulary
+- **M2:** NMF trained on Scotland's corpus (k=[TBD]) — Scotland's debate in its own vocabulary
+- **M3:** NMF trained on Ireland's corpus (k=[TBD]) — Ireland's debate in its own vocabulary
+- **M4:** BERTopic trained on all three countries combined — shared topics across jurisdictions using semantic embeddings
+
+Topic alignment via cosine similarity enables cross-model comparison despite different topic counts. Each country's debate is represented on its own terms; the combined model shows where debates converge and diverge. An earlier England-as-baseline design (training on England, applying to Scotland/Ireland as inference) revealed that England's vocabulary acted as the implicit norm — this finding is retained as specification sensitivity evidence but is not the primary analytical framework.
 
 ---
 
@@ -24,11 +31,12 @@ The pipeline trains on England's policy corpus as a baseline. Scottish and Irish
 
 **~6,000 documents** from government departments, think tanks, media outlets, professional bodies, and research organisations across three jurisdictions. Updated weekly.
 
-| Jurisdiction | Training (2023–2025) | Inference (2023–2025) | Weekly inference (2026) |
+| Jurisdiction | Training (2023–2025) | Weekly inference (2026) | Model |
 |---|---|---|---|
-| **England** | 3,943 articles | — | 231 (weeks 1–11) |
-| **Scotland** | — | 511 backfill | 120 (weeks 1–11) |
-| **Ireland** | — | 1,036 backfill | 67 (weeks 1–11) |
+| **England** | 3,943 articles | 231 (weeks 1–11) | M1: NMF k=30 |
+| **Scotland** | 511 articles | 120 (weeks 1–11) | M2: NMF k=[TBD] |
+| **Ireland** | 1,036 articles | 67 (weeks 1–11) | M3: NMF k=[TBD] |
+| **Combined** | ~5,490 articles | — | M4: BERTopic |
 
 **England sources:** SchoolsWeek, UK Government, FFT Education Datalab, Education Policy Institute, Nuffield Foundation, Federation of Education.
 **Scotland sources:** Scottish Government, Children in Scotland, GTCS, ADES, SERA.
@@ -42,14 +50,24 @@ Storage: Supabase/PostgreSQL. Raw text in `articles_raw`, topic assignments in `
 
 ## Architecture
 
-### Training (England baseline)
-NMF model trained on the England corpus (3,943 articles, 30 topics, k confirmed by coherence sweep and stability testing). The England model defines the topic space — this is a deliberate specification choice, not a default. BERTopic comparison planned.
+### Per-country NMF models (M1, M2, M3)
+Each country gets its own NMF model trained on its own corpus with k determined by coherence sweep. This means each jurisdiction's debate is represented in its own vocabulary — Scotland discovers Scottish topics, Ireland discovers Irish topics, neither is measured as deviation from England.
 
-### Inference (cross-jurisdiction)
-Scotland and Ireland corpora are passed through the England-trained model. Each document receives topic assignments relative to England's topic structure. The backfill (2023–2025) provides the cross-jurisdiction baseline; weekly runs (2026 onwards) track change over time. Automated via GitHub Actions.
+- **M1 (England):** 3,943 articles, k=30 (confirmed by coherence sweep and stability testing)
+- **M2 (Scotland):** 511 articles, k=[TBD] (coherence sweep pending)
+- **M3 (Ireland):** 1,036 articles, k=[TBD] (coherence sweep pending)
+
+### Combined BERTopic model (M4)
+BERTopic trained on all three countries' corpora combined. Uses semantic embeddings which can bridge vocabulary gaps (e.g. clusters "ASN" with "SEND") that NMF's bag-of-words approach treats as separate. Auto-discovers topic count. [TBD — not yet built]
+
+### Topic alignment
+Cosine similarity between topic-word vectors enables cross-model comparison despite different k values. The dashboard shows where topics align (shared concerns) and where they're country-specific.
 
 ### Drift detection
-Jensen-Shannon divergence computed per jurisdiction against the England training distribution. Drift monitoring runs monthly (weekly article volume is too low for reliable weekly drift scores in Scotland and Ireland). Per-jurisdiction drift trajectories stored in Supabase.
+Jensen-Shannon divergence computed per country against its own training distribution. Drift monitoring runs monthly (weekly article volume is too low for reliable weekly scores). Per-jurisdiction drift trajectories stored in Supabase. Automated via GitHub Actions.
+
+### England-as-baseline (specification sensitivity evidence)
+An earlier design trained on England only and applied to Scotland/Ireland as inference. This revealed that England's vocabulary acted as the implicit norm — Scottish and Irish documents were measured as deviation. These results are retained as specification sensitivity evidence: the same data analysed through a different training design produces different conclusions.
 
 ### Cross-jurisdiction distributional analysis (in progress)
 KL divergence (both directions, all jurisdiction pairs), balanced subsamples, and parameter perturbation are planned as robustness checks.

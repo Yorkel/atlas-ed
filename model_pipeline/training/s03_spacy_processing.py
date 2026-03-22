@@ -83,6 +83,23 @@ JUNK_TERMS: Set[str] = {
     "programme", "scheme", "initiative", "pilot",
     "good", "high", "low", "new",
     "introduce", "implement", "launch", "rollout",
+    "department",
+
+    # --- source / organisation names ---
+    # Removed to prevent topics clustering by publisher identity.
+    # This is a specification choice: keeping them would mean some topics
+    # are partly defined by who published, not what was said.
+    # England sources
+    "schoolsweek", "datalab", "fft", "epi", "nuffield", "fed",
+    # Scotland sources
+    "gtcs", "ades", "sera",
+    # Ireland sources
+    "esri", "erc", "rte",
+
+    # --- country names ---
+    # Appear in every document from that country, not discriminative.
+    "england", "english", "scotland", "scottish", "ireland", "irish",
+    "wales", "welsh", "britain", "british",
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
