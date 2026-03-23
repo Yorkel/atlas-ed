@@ -124,8 +124,9 @@ def download_processed(client):
         print("  No processed data found in articles_topics.")
         return
 
+    processed_dir = DATA_DIR / "processed"
     filename = f"processed_data_{date.today().isoformat()}.csv"
-    path = DATA_DIR / filename
+    path = processed_dir / filename
     save_csv(df, path, "all processed")
 
 
