@@ -1,23 +1,20 @@
 """
 sync_from_supabase.py
 
-Pulls data from Supabase `articles_raw` and saves as local CSVs.
-Structure:
-    data/training/eng_training.csv
-    data/training/sco_training.csv
-    data/training/irl_training.csv
-    data/inference/weekly/eng_week_1.csv ... eng_week_N.csv
-    data/inference/weekly/sco_week_1.csv ... sco_week_N.csv
-    data/inference/weekly/irl_week_1.csv ... irl_week_N.csv
+Pulls data from Supabase and saves as local CSVs.
 
-Usage:
-    python sync_from_supabase.py              # sync everything
-    python sync_from_supabase.py --weekly     # only sync weekly inference (faster)
+Sync modes (from articles_raw):
+    python sync_from_supabase.py              # sync training + weekly
+    python sync_from_supabase.py --weekly     # only sync weekly inference
     python sync_from_supabase.py --training   # only sync training data
+
+Download mode (from articles_topics — processed results):
+    python sync_from_supabase.py --download   # download all processed data
 """
 
 import argparse
 import os
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -29,7 +26,6 @@ load_dotenv()
 # ── Config ────────────────────────────────────────────────────────────────────
 DATA_DIR = Path(__file__).resolve().parent / "data"
 TRAINING_DIR = DATA_DIR / "training"
-BACKFILL_DIR = DATA_DIR / "inference" / "backfill"
 WEEKLY_DIR = DATA_DIR / "inference" / "weekly"
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
@@ -45,13 +41,13 @@ COLUMNS = [
 
 
 # ── Supabase fetch ────────────────────────────────────────────────────────────
-def fetch_all(client, filters: dict) -> pd.DataFrame:
-    """Fetch all rows from articles_raw matching filters, paginating as needed."""
+def fetch_all(client, table: str, columns: list[str], filters: dict) -> pd.DataFrame:
+    """Fetch all rows from a table matching filters, paginating as needed."""
     rows = []
     page = 0
     while True:
         start = page * PAGE_SIZE
-        query = client.table("articles_raw").select(",".join(COLUMNS))
+        query = client.table(table).select(",".join(columns))
         for col, val in filters.items():
             if val is None:
                 query = query.is_(col, "null")
@@ -77,7 +73,7 @@ def sync_training(client):
     """Pull training data for all three countries."""
     print("\n── Training ──")
     for country in ["eng", "sco", "irl"]:
-        df = fetch_all(client, {"country": country, "dataset_type": "training"})
+        df = fetch_all(client, "articles_raw", COLUMNS, {"country": country, "dataset_type": "training"})
         save_csv(df, TRAINING_DIR / f"{country}_training.csv", f"{country}/training")
 
 
@@ -86,7 +82,7 @@ def sync_weekly(client):
     print("\n── Weekly ──")
     for country in ["eng", "sco", "irl"]:
         # Fetch all inference rows with week numbers for this country
-        df = fetch_all(client, {
+        df = fetch_all(client, "articles_raw", COLUMNS, {
             "country": country,
             "dataset_type": "inference",
         })
@@ -108,16 +104,44 @@ def sync_weekly(client):
             )
 
 
+# ── Download processed data ───────────────────────────────────────────────────
+
+PROCESSED_COLUMNS = [
+    "id", "url", "title", "article_date", "source", "country",
+    "institution_name", "language", "dataset_type", "week_number",
+    "model_type", "topic_num", "dominant_topic", "dominant_topic_weight",
+    "topic_probabilities", "contestability_score", "election_period",
+    "run_id",
+]
+
+
+def download_processed(client):
+    """Download all processed data from articles_topics into a single CSV."""
+    print("\n── Download processed data ──")
+    df = fetch_all(client, "articles_topics", PROCESSED_COLUMNS, {})
+
+    if df.empty:
+        print("  No processed data found in articles_topics.")
+        return
+
+    filename = f"processed_data_{date.today().isoformat()}.csv"
+    path = DATA_DIR / filename
+    save_csv(df, path, "all processed")
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(description="Sync data from Supabase to local CSVs")
     parser.add_argument("--weekly", action="store_true", help="Only sync weekly inference data")
     parser.add_argument("--training", action="store_true", help="Only sync training data")
+    parser.add_argument("--download", action="store_true", help="Download all processed data from articles_topics")
     args = parser.parse_args()
 
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    if args.weekly:
+    if args.download:
+        download_processed(client)
+    elif args.weekly:
         sync_weekly(client)
     elif args.training:
         sync_training(client)

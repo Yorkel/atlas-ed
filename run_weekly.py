@@ -56,7 +56,7 @@ def main():
 
     # Step 2: Run weekly inference (all three countries, new weeks only)
     if not run_step("Weekly inference", [
-        sys.executable, "-m", "model_pipeline.inference.batch_runner", "--mode", "weekly"
+        sys.executable, "-m", "model_pipeline.inference.batch_runner", "--mode", "inference_weekly"
     ]):
         logger.error("Inference failed. Aborting.")
         sys.exit(1)

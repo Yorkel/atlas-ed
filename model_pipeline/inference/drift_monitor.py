@@ -1,14 +1,18 @@
 """
 drift_monitor.py
 
-Compute Jensen-Shannon divergence between the England training baseline
-and each country's topic distribution per monitoring period.
+Compute Jensen-Shannon divergence for topic model drift monitoring.
+
+Two types of drift:
+  - Within-country: each country's weekly inference vs its own training baseline
+  - Cross-country:  compare training baselines between countries
 
 Writes results to Supabase `drift_metrics` table.
 
 Usage:
   python -m model_pipeline.inference.drift_monitor
-  python -m model_pipeline.inference.drift_monitor --backfill-only
+  python -m model_pipeline.inference.drift_monitor --within-country-only
+  python -m model_pipeline.inference.drift_monitor --cross-country-only
 
 Requires .env with SUPABASE_URL and SUPABASE_SERVICE_KEY.
 """
@@ -20,21 +24,19 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime
+from itertools import combinations
 
 import numpy as np
 from dotenv import load_dotenv
 from scipy.spatial.distance import jensenshannon
 from supabase import create_client, Client
 
-from model_pipeline.training.s06_topic_allocation import TOPIC_NAMES
-
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 CHUNK_SIZE = 1000
-TOPIC_COLS = list(TOPIC_NAMES.values())
-N_TOPICS = len(TOPIC_COLS)
+COUNTRIES = ["eng", "sco", "irl"]
 
 
 def get_supabase_client() -> Client:
@@ -65,36 +67,37 @@ def fetch_topic_probabilities(client: Client, country: str = None, dataset_type:
     return articles
 
 
-def compute_topic_distribution(articles: list[dict]) -> np.ndarray:
-    """Compute average topic distribution from a list of articles with topic_probabilities."""
-    if not articles:
-        return np.zeros(N_TOPICS)
+def get_topic_keys(articles: list[dict]) -> list[str]:
+    """Extract the sorted list of topic keys from topic_probabilities JSONB."""
+    keys = set()
+    for a in articles:
+        probs = a.get("topic_probabilities", {})
+        if probs:
+            keys.update(probs.keys())
+    return sorted(keys)
+
+
+def compute_topic_distribution(articles: list[dict], topic_keys: list[str]) -> np.ndarray:
+    """Compute average topic distribution from articles, using the given topic keys."""
+    if not articles or not topic_keys:
+        return np.zeros(max(len(topic_keys), 1))
 
     vectors = []
     for article in articles:
         probs = article.get("topic_probabilities", {})
         if not probs:
             continue
-        vec = np.array([probs.get(col, 0.0) for col in TOPIC_COLS], dtype=float)
+        vec = np.array([probs.get(col, 0.0) for col in topic_keys], dtype=float)
         vectors.append(vec)
 
     if not vectors:
-        return np.zeros(N_TOPICS)
+        return np.zeros(len(topic_keys))
 
     avg = np.mean(vectors, axis=0)
     total = avg.sum()
     if total > 0:
         avg = avg / total
     return avg
-
-
-def compute_baseline(client: Client) -> np.ndarray:
-    """Compute the England training baseline distribution."""
-    logger.info("Computing England training baseline...")
-    articles = fetch_topic_probabilities(client, country="eng", dataset_type="training")
-    baseline = compute_topic_distribution(articles)
-    logger.info("Baseline computed from %d articles.", len(articles))
-    return baseline
 
 
 def compute_js_divergence(dist: np.ndarray, baseline: np.ndarray) -> float:
@@ -115,84 +118,121 @@ def write_drift_metric(client: Client, row: dict) -> None:
         logger.error("Failed to write drift metric: %s", e)
 
 
-def run_weekly_drift(client: Client, baseline: np.ndarray, run_id: str) -> None:
-    """Compute drift for each country for each week."""
-    articles = fetch_topic_probabilities(client, dataset_type="inference")
-    weekly_articles = [a for a in articles if a.get("week_number") is not None]
+# ── Within-country drift ─────────────────────────────────────────────────────
 
-    # Group by country and week
-    groups = defaultdict(list)
-    for a in weekly_articles:
-        key = (a["country"], int(a["week_number"]))
-        groups[key].append(a)
+def run_within_country_drift(client: Client, run_id: str) -> None:
+    """Compare each country's weekly inference against its own training baseline."""
+    logger.info("\n── Within-country drift ──")
 
-    logger.info("Found %d country-week groups.", len(groups))
-
-    for (country, week_num), group_articles in sorted(groups.items()):
-        dist = compute_topic_distribution(group_articles)
-        js = compute_js_divergence(dist, baseline)
-
-        # Count unique dominant topics
-        dominant_topics = set()
-        for a in group_articles:
-            probs = a.get("topic_probabilities", {})
-            if probs:
-                max_topic = max(probs, key=probs.get)
-                dominant_topics.add(max_topic)
-
-        row = {
-            "week_number": week_num,
-            "country": country,
-            "js_divergence": round(js, 6),
-            "article_count": len(group_articles),
-            "unique_topics": len(dominant_topics),
-            "model_type": "nmf",
-            "period_type": "week",
-            "run_id": run_id,
-        }
-
-        write_drift_metric(client, row)
-        logger.info(
-            "  %s week %d: JS=%.4f, articles=%d, unique_topics=%d",
-            country, week_num, js, len(group_articles), len(dominant_topics),
-        )
-
-
-def run_backfill_drift(client: Client, baseline: np.ndarray, run_id: str) -> None:
-    """Compute drift for backfill data (Scotland and Ireland 2023-2025 as single periods)."""
-    for country in ["sco", "irl"]:
-        articles = fetch_topic_probabilities(client, country=country, dataset_type="inference")
-        backfill = [a for a in articles if a.get("week_number") is None]
-
-        if not backfill:
-            logger.info("No backfill data for %s.", country)
+    for country in COUNTRIES:
+        # Compute this country's training baseline
+        training_articles = fetch_topic_probabilities(client, country=country, dataset_type="training")
+        if not training_articles:
+            logger.warning("No training data for %s. Skipping.", country)
             continue
 
-        dist = compute_topic_distribution(backfill)
-        js = compute_js_divergence(dist, baseline)
+        topic_keys = get_topic_keys(training_articles)
+        baseline = compute_topic_distribution(training_articles, topic_keys)
+        logger.info(
+            "%s baseline: %d articles, %d topics",
+            country, len(training_articles), len(topic_keys),
+        )
 
-        dominant_topics = set()
-        for a in backfill:
-            probs = a.get("topic_probabilities", {})
-            if probs:
-                max_topic = max(probs, key=probs.get)
-                dominant_topics.add(max_topic)
+        # Fetch this country's inference data
+        inference_articles = fetch_topic_probabilities(client, country=country, dataset_type="inference")
+        weekly_articles = [a for a in inference_articles if a.get("week_number") is not None]
+
+        if not weekly_articles:
+            logger.info("No weekly inference data for %s.", country)
+            continue
+
+        # Group by week
+        weeks = defaultdict(list)
+        for a in weekly_articles:
+            weeks[int(a["week_number"])].append(a)
+
+        for week_num in sorted(weeks):
+            group = weeks[week_num]
+            dist = compute_topic_distribution(group, topic_keys)
+            js = compute_js_divergence(dist, baseline)
+
+            dominant_topics = set()
+            for a in group:
+                probs = a.get("topic_probabilities", {})
+                if probs:
+                    dominant_topics.add(max(probs, key=probs.get))
+
+            row = {
+                "week_number": week_num,
+                "country": country,
+                "js_divergence": round(js, 6),
+                "article_count": len(group),
+                "unique_topics": len(dominant_topics),
+                "model_type": "nmf",
+                "period_type": "within_country_weekly",
+                "run_id": run_id,
+            }
+
+            write_drift_metric(client, row)
+            logger.info(
+                "  %s week %d: JS=%.4f, articles=%d, unique_topics=%d",
+                country, week_num, js, len(group), len(dominant_topics),
+            )
+
+
+# ── Cross-country drift ──────────────────────────────────────────────────────
+
+def run_cross_country_drift(client: Client, run_id: str) -> None:
+    """Compare training baselines between each pair of countries.
+
+    Since each country has different topics, we use the union of all topic keys
+    and zero-fill missing topics. This gives a comparable vector space.
+    """
+    logger.info("\n── Cross-country drift ──")
+
+    # Fetch training data and compute baselines per country
+    baselines = {}
+    all_keys = set()
+
+    for country in COUNTRIES:
+        articles = fetch_topic_probabilities(client, country=country, dataset_type="training")
+        if not articles:
+            logger.warning("No training data for %s. Skipping.", country)
+            continue
+        keys = get_topic_keys(articles)
+        all_keys.update(keys)
+        baselines[country] = (articles, keys)
+
+    if len(baselines) < 2:
+        logger.warning("Need at least 2 countries for cross-country comparison.")
+        return
+
+    # Recompute distributions using the union of all topic keys
+    union_keys = sorted(all_keys)
+    distributions = {}
+    for country, (articles, _) in baselines.items():
+        distributions[country] = compute_topic_distribution(articles, union_keys)
+        logger.info("%s training: %d articles", country, len(articles))
+
+    # Compare each pair
+    for country_a, country_b in combinations(sorted(distributions.keys()), 2):
+        js = compute_js_divergence(distributions[country_a], distributions[country_b])
 
         row = {
             "week_number": None,
-            "country": country,
+            "country": f"{country_a}_vs_{country_b}",
             "js_divergence": round(js, 6),
-            "article_count": len(backfill),
-            "unique_topics": len(dominant_topics),
+            "article_count": None,
+            "unique_topics": len(union_keys),
             "model_type": "nmf",
-            "period_type": "backfill",
+            "period_type": "cross_country_training",
             "run_id": run_id,
         }
 
         write_drift_metric(client, row)
         logger.info(
-            "  %s backfill: JS=%.4f, articles=%d, unique_topics=%d",
-            country, js, len(backfill), len(dominant_topics),
+            "  %s vs %s: JS=%.4f",
+            country_a, country_b, js,
         )
 
 
@@ -203,22 +243,22 @@ def main() -> None:
     )
 
     parser = argparse.ArgumentParser(description="Compute drift metrics per country per period")
-    parser.add_argument("--backfill-only", action="store_true", help="Only compute backfill drift")
+    parser.add_argument("--within-country-only", action="store_true", help="Only compute within-country drift")
+    parser.add_argument("--cross-country-only", action="store_true", help="Only compute cross-country drift")
     args = parser.parse_args()
 
     client = get_supabase_client()
     run_id = datetime.now().strftime("%Y-%m-%d_%H%M%S")
 
-    baseline = compute_baseline(client)
+    if args.cross_country_only:
+        run_cross_country_drift(client, run_id)
+    elif args.within_country_only:
+        run_within_country_drift(client, run_id)
+    else:
+        run_within_country_drift(client, run_id)
+        run_cross_country_drift(client, run_id)
 
-    logger.info("\n── Backfill drift ──")
-    run_backfill_drift(client, baseline, run_id)
-
-    if not args.backfill_only:
-        logger.info("\n── Weekly drift ──")
-        run_weekly_drift(client, baseline, run_id)
-
-    print("\n✅ Drift monitoring complete.")
+    print("\nDrift monitoring complete.")
 
 
 if __name__ == "__main__":

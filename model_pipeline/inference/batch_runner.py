@@ -1,14 +1,20 @@
 """
 batch_runner.py
 
-Run inference on all three countries using their own trained NMF models.
+Run topic allocation for all three countries using their own trained NMF models.
 
-Each country loads its own model (specified in config.yaml countries.<country>.model_run).
-Weekly inference applies each country's model to that country's new articles.
+Two pipelines, same logic (load CSV → model → allocate topics → push to Supabase):
+  - training:          training data (2023-2025) through each country's model
+  - inference_weekly:  new weekly articles through each country's model
+
+Models are trained in notebooks and identified via config.yaml countries.<country>.model_run.
+Data is synced from Supabase via sync_from_supabase.py before running.
 
 Usage:
-  python -m model_pipeline.inference.batch_runner --mode weekly
-  python -m model_pipeline.inference.batch_runner --mode all
+  python -m model_pipeline.inference.batch_runner --mode training_all
+  python -m model_pipeline.inference.batch_runner --mode training_eng
+  python -m model_pipeline.inference.batch_runner --mode inference_weekly
+  python -m model_pipeline.inference.batch_runner --mode all_training_inference
 
 Requires:
   - Saved models in experiments/outputs/runs/<run_id>/
@@ -77,7 +83,7 @@ def load_model(run_dir: Path):
     return nmf_model, vectorizer
 
 
-def load_and_preprocess(csv_path: Path) -> pd.DataFrame:
+def preprocess(csv_path: Path) -> pd.DataFrame:
     """Load CSV and run preprocessing (s02 cleaning + s03 spaCy)."""
     from model_pipeline.training.s02_cleaning import run_cleaning
     from model_pipeline.training.s03_spacy_processing import run_spacy_processing
@@ -98,7 +104,7 @@ def load_and_preprocess(csv_path: Path) -> pd.DataFrame:
     return df
 
 
-def run_inference(df: pd.DataFrame, nmf_model, vectorizer, run_id: str, model_type: str = "nmf") -> None:
+def allocate_and_push(df: pd.DataFrame, nmf_model, vectorizer, run_id: str, model_type: str = "nmf") -> None:
     """Run topic allocation and write results to Supabase."""
     from model_pipeline.training.s06_topic_allocation import run_topic_allocation
     from model_pipeline.training.s11_supabase_writer import write_topic_results
@@ -107,29 +113,35 @@ def run_inference(df: pd.DataFrame, nmf_model, vectorizer, run_id: str, model_ty
     write_topic_results(df_alloc, run_id=run_id, model_type=model_type)
 
 
-def run_backfill(country: str) -> None:
-    """Run backfill for a single country using its own model."""
+def process_csvs(csv_paths: list[Path], country: str, nmf_model, vectorizer, run_id: str, label: str = "") -> None:
+    """Shared pipeline: preprocess CSVs → allocate topics → push to Supabase."""
+    model_type = f"nmf_{country}"
+    for csv_path in csv_paths:
+        df = preprocess(csv_path)
+        if df.empty:
+            logger.info("Empty after preprocessing: %s. Skipping.", csv_path.name)
+            continue
+
+        logger.info("Processing %s %s: %d articles (model: %s)", country, label, len(df), run_id)
+        allocate_and_push(df, nmf_model, vectorizer, run_id, model_type=model_type)
+
+
+def run_training(country: str) -> None:
+    """Run training data through a country's model and push topics to Supabase."""
     csv_path = PROJECT_ROOT / "data" / "training" / f"{country}_training.csv"
     if not csv_path.exists():
         logger.error("File not found: %s. Run sync_from_supabase.py first.", csv_path)
         return
 
     run_dir = get_model_dir(country)
-    run_id = run_dir.name
     nmf_model, vectorizer = load_model(run_dir)
 
-    df = load_and_preprocess(csv_path)
-
-    if df.empty:
-        logger.info("No backfill rows for %s. Skipping.", country)
-        return
-
-    logger.info("Running backfill for %s: %d articles (model: %s)", country, len(df), run_id)
-    run_inference(df, nmf_model, vectorizer, run_id)
-    logger.info("Backfill complete for %s.", country)
+    logger.info("── Training pipeline: %s ──", country)
+    process_csvs([csv_path], country, nmf_model, vectorizer, run_dir.name, label="training")
+    logger.info("Training pipeline complete for %s.", country)
 
 
-def run_weekly() -> None:
+def run_inference_weekly() -> None:
     """Run weekly inference — each country uses its own model."""
     weekly_dir = PROJECT_ROOT / "data" / "inference" / "weekly"
     if not weekly_dir.exists():
@@ -141,37 +153,23 @@ def run_weekly() -> None:
         logger.info("No weekly CSVs found. Nothing to do.")
         return
 
-    # Load models once per country
-    models = {}
-    for country in CONFIG["countries"]:
+    # Group CSVs by country
+    country_csvs: dict[str, list[Path]] = {}
+    for csv_path in csv_files:
+        country = csv_path.stem.split("_week_")[0]
+        country_csvs.setdefault(country, []).append(csv_path)
+
+    # Process each country's weekly files
+    for country, csvs in country_csvs.items():
         try:
             run_dir = get_model_dir(country)
-            models[country] = {
-                "nmf_model": joblib.load(run_dir / "nmf_model.joblib"),
-                "vectorizer": joblib.load(run_dir / "vectorizer.joblib"),
-                "run_id": run_dir.name,
-            }
-            logger.info("Loaded %s model from %s", country, run_dir.name)
+            nmf_model, vectorizer = load_model(run_dir)
         except FileNotFoundError as e:
             logger.error("Skipping %s: %s", country, e)
-
-    for csv_path in csv_files:
-        parts = csv_path.stem.split("_week_")
-        country = parts[0]
-        week_num = int(parts[1])
-
-        if country not in models:
-            logger.warning("No model for %s, skipping %s", country, csv_path.name)
             continue
 
-        df = load_and_preprocess(csv_path)
-        if df.empty:
-            logger.info("Empty file: %s. Skipping.", csv_path)
-            continue
-
-        m = models[country]
-        logger.info("Running %s week %d: %d articles (model: %s)", country, week_num, len(df), m["run_id"])
-        run_inference(df, m["nmf_model"], m["vectorizer"], m["run_id"])
+        logger.info("── Inference weekly: %s (%d files) ──", country, len(csvs))
+        process_csvs(csvs, country, nmf_model, vectorizer, run_dir.name, label="weekly")
 
     logger.info("Weekly inference complete for all countries.")
 
@@ -183,26 +181,33 @@ def main() -> None:
     )
     logging.getLogger("gensim").setLevel(logging.WARNING)
 
-    parser = argparse.ArgumentParser(description="Run NMF inference on cross-jurisdiction data")
+    parser = argparse.ArgumentParser(description="Run NMF topic allocation pipeline")
     parser.add_argument(
         "--mode",
-        choices=["backfill_irl", "backfill_sco", "backfill_eng", "weekly", "all"],
-        default="all",
-        help="Which inference to run",
+        choices=[
+            "training_all", "training_eng", "training_sco", "training_irl",
+            "inference_weekly",
+            "all_training_inference",
+        ],
+        default="all_training_inference",
+        help="Which pipeline to run",
     )
     args = parser.parse_args()
 
-    if args.mode.startswith("backfill_"):
-        country = args.mode.split("_")[1]
-        run_backfill(country)
-    elif args.mode == "weekly":
-        run_weekly()
-    elif args.mode == "all":
+    if args.mode == "training_all":
         for country in CONFIG["countries"]:
-            run_backfill(country)
-        run_weekly()
+            run_training(country)
+    elif args.mode.startswith("training_"):
+        country = args.mode.split("_")[1]
+        run_training(country)
+    elif args.mode == "inference_weekly":
+        run_inference_weekly()
+    elif args.mode == "all_training_inference":
+        for country in CONFIG["countries"]:
+            run_training(country)
+        run_inference_weekly()
 
-    print("\nBatch inference complete.")
+    print("\nBatch pipeline complete.")
 
 
 if __name__ == "__main__":

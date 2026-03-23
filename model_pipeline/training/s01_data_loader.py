@@ -7,9 +7,9 @@ combines title + text into a single 'text' column, and removes PDF-sourced rows.
 
 Data structure:
   data/training/eng_training.csv         <- England training corpus
-  data/inference/eng_inference.csv       <- England weekly inference
-  data/inference/sco_inference.csv       <- Scotland (backfill + weekly)
-  data/inference/irl_inference.csv       <- Ireland (backfill + weekly)
+  data/training/sco_training.csv         <- Scotland training corpus
+  data/training/irl_training.csv         <- Ireland training corpus
+  data/inference/weekly/*_week_*.csv     <- Weekly inference (all countries)
 """
 
 import logging
