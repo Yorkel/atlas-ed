@@ -184,24 +184,15 @@ def save_run_outputs(
     )
     _write_json(asdict(meta), run_dir / "run_metadata.json")
 
-    # 6) Save evaluation outputs if provided
+    # 6) Save evaluation outputs if provided (country-specific filenames)
+    country = dataset_name.split("_")[0]  # eng_training -> eng
     if coherence_df is not None:
         _write_df_csv(coherence_df, run_dir / "evaluation" / "coherence_sweep.csv")
-        _write_df_csv(coherence_df, PROJECT_ROOT / "data" / "evaluation_outputs" / "coherence_sweep.csv")
+        _write_df_csv(coherence_df, PROJECT_ROOT / "data" / "evaluation_outputs" / f"coherence_sweep_{country}.csv")
 
     if stability_df is not None:
         _write_df_csv(stability_df, run_dir / "evaluation" / "stability_seeds.csv")
-        _write_df_csv(stability_df, PROJECT_ROOT / "data" / "evaluation_outputs" / "stability_seeds.csv")
-
-    # 7) Backward-compatible: if someone already wrote them elsewhere, copy into run
-    _copy_if_exists(
-        PROJECT_ROOT / "data" / "evaluation_outputs" / "coherence_sweep.csv",
-        run_dir / "evaluation" / "coherence_sweep.csv",
-    )
-    _copy_if_exists(
-        PROJECT_ROOT / "data" / "evaluation_outputs" / "stability_seeds.csv",
-        run_dir / "evaluation" / "stability_seeds.csv",
-    )
+        _write_df_csv(stability_df, PROJECT_ROOT / "data" / "evaluation_outputs" / f"stability_seeds_{country}.csv")
 
     return run_dir
 

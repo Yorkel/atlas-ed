@@ -34,21 +34,81 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def load_topic_names(country: str) -> Dict[int, str]:
-    """Load topic names from LLM review JSON or run directory."""
-    # Try LLM review file first
-    llm_path = PROJECT_ROOT / "data" / "evaluation_outputs" / f"llm_{country}_topic_review.json"
-    if country == "eng":
-        llm_path = PROJECT_ROOT / "data" / "evaluation_outputs" / "llm_topic_review.json"
-
-    if llm_path.exists():
-        with open(llm_path) as f:
-            reviews = json.load(f)
-        names = {item["topic"]: item["suggested_name"] for item in reviews}
-        logger.info("Loaded %d topic names from %s", len(names), llm_path.name)
-        return names
-
-    logger.warning("No topic names found for %s — using generic names", country)
-    return {}
+    """Load topic names for a country. Returns manual names if available, else empty dict."""
+    manual_names = {
+        "eng": {
+            0: "child_and_family_welfare",
+            1: "academy_finance_and_oversight",
+            2: "academy_trust_governance",
+            3: "teacher_pay",
+            4: "ofsted_inspection_reform",
+            5: "gcse_grades_and_results",
+            6: "pupil_disadvantage_and_attainment",
+            7: "dfe_warning_notices",
+            8: "send_and_council_deficits",
+            9: "teacher_strikes_and_unions",
+            10: "apprenticeships_and_skills",
+            11: "ofqual_exam_regulation",
+            12: "raac_building_crisis",
+            13: "school_absence_and_attendance",
+            14: "free_school_meals_and_poverty",
+            15: "education_politics",
+            16: "research_and_social_justice",
+            17: "leadership_appointments",
+            18: "mental_health_and_wellbeing",
+            19: "post16_qualifications",
+            20: "primary_assessment_and_sats",
+            21: "safeguarding_and_complaints",
+            22: "teacher_recruitment_and_retention",
+            23: "school_funding",
+            24: "curriculum_and_subjects",
+            25: "ofsted_report_cards",
+            26: "breakfast_clubs",
+            27: "edtech_and_ai",
+            28: "school_places_and_capacity",
+            29: "exclusions_and_suspensions",
+        },
+        "sco": {
+            0: "youth_advocacy_and_inclusion",
+            1: "teaching_profession_and_regulation",
+            2: "attainment_and_school_improvement",
+            3: "child_poverty_and_family_support",
+            4: "education_reform_and_qualifications",
+            5: "childrens_rights_and_uncrc",
+            6: "gaelic_language_and_education",
+            7: "education_research_networks",
+            8: "care_and_the_promise",
+            9: "school_leaver_destinations",
+            10: "gtcs_digital_services",
+            11: "education_statistics",
+            12: "free_school_meals_and_poverty",
+            13: "breakfast_clubs_and_childcare",
+            14: "student_finance_and_carers",
+        },
+        "irl": {
+            0: "school_infrastructure_and_design",
+            1: "state_examinations",
+            2: "teaching_profession_and_regulation",
+            3: "student_inclusion_and_participation",
+            4: "early_years_and_inspection",
+            5: "school_self_evaluation",
+            6: "school_governance_and_ethos",
+            7: "international_assessment",
+            8: "education_policy_and_strategy",
+            9: "wellbeing_and_parental_guidance",
+            10: "state_examinations_administration",
+            11: "staff_employment_and_leave",
+            12: "curriculum_and_assessment",
+            13: "education_and_social_research",
+            14: "special_education",
+        },
+    }
+    names = manual_names.get(country, {})
+    if names:
+        logger.info("Loaded %d topic names for %s", len(names), country)
+    else:
+        logger.warning("No topic names found for %s", country)
+    return names
 
 
 def make_generic_topic_names(n_topics: int) -> Dict[int, str]:
@@ -56,38 +116,38 @@ def make_generic_topic_names(n_topics: int) -> Dict[int, str]:
     return {i: f"topic_{i}" for i in range(n_topics)}
 
 
-# Default England names for backward compatibility
-TOPIC_NAMES: Dict[int, str] = load_topic_names("eng") or {
-    0: "child_and_family_support",
+# England k=30 topic names — human-assigned after manual keyword review
+TOPIC_NAMES: Dict[int, str] = {
+    0: "child_and_family_welfare",
     1: "academy_finance_and_oversight",
-    2: "mat_governance",
+    2: "academy_trust_governance",
     3: "teacher_pay",
-    4: "ofsted_inspections",
-    5: "exam_results",
-    6: "pupil_absence",
-    7: "dfe_intervention",
-    8: "local_authority_deficits",
-    9: "teacher_strikes",
-    10: "apprenticeships",
-    11: "exam_regulation",
-    12: "raac_crisis",
-    13: "disadvantaged_groups",
-    14: "free_school_meals",
+    4: "ofsted_inspection_reform",
+    5: "gcse_grades_and_results",
+    6: "pupil_disadvantage_and_attainment",
+    7: "dfe_warning_notices",
+    8: "send_and_council_deficits",
+    9: "teacher_strikes_and_unions",
+    10: "apprenticeships_and_skills",
+    11: "ofqual_exam_regulation",
+    12: "raac_building_crisis",
+    13: "school_absence_and_attendance",
+    14: "free_school_meals_and_poverty",
     15: "education_politics",
-    16: "education_research",
+    16: "research_and_social_justice",
     17: "leadership_appointments",
-    18: "ai_and_edtech",
-    19: "mental_health",
-    20: "curriculum",
-    21: "safeguarding",
-    22: "teacher_recruitment",
+    18: "mental_health_and_wellbeing",
+    19: "post16_qualifications",
+    20: "primary_assessment_and_sats",
+    21: "safeguarding_and_complaints",
+    22: "teacher_recruitment_and_retention",
     23: "school_funding",
-    24: "exclusions_suspensions",
-    25: "report_cards",
-    26: "send_inclusion",
-    27: "primary_assessment",
-    28: "school_places",
-    29: "breakfast_clubs",
+    24: "curriculum_and_subjects",
+    25: "ofsted_report_cards",
+    26: "breakfast_clubs",
+    27: "edtech_and_ai",
+    28: "school_places_and_capacity",
+    29: "exclusions_and_suspensions",
 }
 
 
