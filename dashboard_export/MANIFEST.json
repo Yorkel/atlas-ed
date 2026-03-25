@@ -1,0 +1,26 @@
+{
+  "exported_at": "2026-03-25T10:35:08.076161",
+  "source_repo": "AM1_topic_modelling",
+  "models": {
+    "eng_k5": "2026-03-24_104906",
+    "eng_k15": "2026-03-24_112503",
+    "eng_k30": "eng_2026-03-24_134826",
+    "eng_k30_nm": "2026-03-24_013511"
+  },
+  "cross_jurisdiction": {
+    "sco_k15": "sco_2026-03-24_135938",
+    "irl_k15": "irl_2026-03-24_140040"
+  },
+  "contents": {
+    "models/": "Enriched model JSONs with topic stats, keywords, and run metadata",
+    "articles/": "Analysis-ready CSVs with article-level topic assignments and probabilities",
+    "articles/topic_timeseries_eng.csv": "Monthly topic counts for trend visualisation",
+    "rag/": "RAG comparison JSON and FAISS vector indexes",
+    "llm_reviews/": "LLM-generated topic name reviews and suggestions",
+    "evaluation/": "Coherence sweep and stability seed CSVs",
+    "visualisations/": "Pre-rendered charts (PNG)",
+    "cross_jurisdiction/": "Scotland and Ireland model artifacts and analysis CSVs",
+    "framing_ai_edtech.json": "Framing analysis for AI/EdTech topic",
+    ".env.example": "Supabase and API key template"
+  }
+}

@@ -1,0 +1,212 @@
+[
+  {
+    "topic": 0,
+    "suggested_name": "esfa_late_information",
+    "explanation": "This topic focuses on late information submissions from education providers to the ESFA and local authorities.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures the ESFA late notification theme evident in the keywords."
+  },
+  {
+    "topic": 1,
+    "suggested_name": "child_welfare_send",
+    "explanation": "This topic covers child welfare, care, SEND provisions, and support for vulnerable children and families.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly captures both the child welfare and SEND elements prominent in the keywords."
+  },
+  {
+    "topic": 2,
+    "suggested_name": "dfe_warning_notices",
+    "explanation": "This topic centers on warning notices issued by DfE regional directors to schools and trusts.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name precisely reflects the focus on DfE warning notices to educational institutions."
+  },
+  {
+    "topic": 3,
+    "suggested_name": "pupil_attainment_measures",
+    "explanation": "This topic covers pupil attainment data, key stage assessments, and performance measures for different groups.",
+    "proposed_name_assessment": "CLOSE",
+    "proposed_name_note": "The proposed name captures the pupil attainment focus well, though 'measures' might be more comprehensive than just 'data'."
+  },
+  {
+    "topic": 4,
+    "suggested_name": "university_qualifications_progression",
+    "explanation": "This topic addresses university qualifications, technical courses, and progression outcomes for different student groups.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures both the post-16 qualification focus and equity concerns for disadvantaged students."
+  },
+  {
+    "topic": 5,
+    "suggested_name": "skills_employer_training",
+    "explanation": "This topic focuses on skills development, employer engagement, and workforce training across various sectors.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the three main pillars of skills, employers, and workforce development."
+  },
+  {
+    "topic": 6,
+    "suggested_name": "esfa_funding_management",
+    "explanation": "This topic covers ESFA funding assurance and resource management for educational providers.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name correctly identifies the ESFA funding assurance theme central to this topic."
+  },
+  {
+    "topic": 7,
+    "suggested_name": "ofsted_inspection_leadership",
+    "explanation": "This topic addresses Ofsted inspections, chief inspector communications, and the 'Big Listen' reform initiative.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name captures both the Ofsted inspection focus and the reform elements like 'Big Listen'."
+  },
+  {
+    "topic": 8,
+    "suggested_name": "ofqual_exam_oversight",
+    "explanation": "This topic covers Ofqual's role in exam regulation, qualification oversight, and assessment standards.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects Ofqual's regulatory role over exams and qualifications."
+  },
+  {
+    "topic": 9,
+    "suggested_name": "research_social_diversity",
+    "explanation": "This topic focuses on research projects addressing social issues, racial diversity, and inequality.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures the research focus on social issues and inequality themes."
+  },
+  {
+    "topic": 10,
+    "suggested_name": "attendance_persistent_absence",
+    "explanation": "This topic addresses pupil attendance issues, particularly persistent absence across primary and secondary schools.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly captures the attendance and absence focus evident in the keywords."
+  },
+  {
+    "topic": 11,
+    "suggested_name": "academy_trust_management",
+    "explanation": "This topic covers academy trust governance, financial management, and multi-academy trust operations.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the focus on academy trust governance and management issues."
+  },
+  {
+    "topic": 12,
+    "suggested_name": "teacher_recruitment_retention",
+    "explanation": "This topic addresses teaching profession issues including recruitment, retention, pay, and professional development.",
+    "proposed_name_assessment": "CLOSE",
+    "proposed_name_note": "The proposed name captures the teacher focus well, though it's broader than just workforce and includes specific recruitment/retention issues."
+  },
+  {
+    "topic": 13,
+    "suggested_name": "disadvantage_gap_policy",
+    "explanation": "This topic focuses on policy reports examining disadvantage gaps and attainment differences.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures the focus on disadvantage gap analysis in policy reports."
+  },
+  {
+    "topic": 14,
+    "suggested_name": "education_leadership_future",
+    "explanation": "This topic addresses national education leadership, system development, and future vision for education.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures the education system leadership and strategic development themes."
+  },
+  {
+    "topic": 15,
+    "suggested_name": "exclusion_suspension_statistics",
+    "explanation": "This topic covers school exclusion and suspension data, particularly regarding at-risk pupil groups.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name directly matches the clear focus on exclusions and suspensions in the keywords."
+  },
+  {
+    "topic": 16,
+    "suggested_name": "esfa_provider_oversight",
+    "explanation": "This topic covers ESFA oversight and regulation of education providers and academies.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the ESFA's regulatory role over education providers."
+  },
+  {
+    "topic": 17,
+    "suggested_name": "gcse_grade_outcomes",
+    "explanation": "This topic focuses on GCSE results, grade distributions, and subject-specific attainment patterns.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name precisely captures the focus on GCSE results and grade analysis."
+  },
+  {
+    "topic": 18,
+    "suggested_name": "breakfast_club_wraparound",
+    "explanation": "This topic addresses breakfast clubs, wraparound care, and early school activities for pupils.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly matches the breakfast club and wraparound care focus in the keywords."
+  },
+  {
+    "topic": 19,
+    "suggested_name": "school_management_operations",
+    "explanation": "This topic covers school operations, leadership, buildings, and general school management issues.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures the broad operational aspects of school management."
+  },
+  {
+    "topic": 20,
+    "suggested_name": "accounting_officer_governance",
+    "explanation": "This topic addresses accounting officer responsibilities, financial oversight, and governance structures.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the accounting officer oversight and governance themes."
+  },
+  {
+    "topic": 21,
+    "suggested_name": "youth_mental_wellbeing",
+    "explanation": "This topic focuses on young people's mental health, wellbeing, and transition support.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name captures the key themes of youth welfare and mental health support."
+  },
+  {
+    "topic": 22,
+    "suggested_name": "apprenticeship_training",
+    "explanation": "This topic covers apprenticeship programs, employer engagement, and vocational training pathways.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name directly reflects the clear apprenticeship focus throughout the keywords."
+  },
+  {
+    "topic": 23,
+    "suggested_name": "college_financial_oversight",
+    "explanation": "This topic addresses college financial health, management notices, and sixth form college governance.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures the focus on college financial health and oversight."
+  },
+  {
+    "topic": 24,
+    "suggested_name": "curriculum_subject_choices",
+    "explanation": "This topic covers curriculum subjects, qualifications, and subject entry patterns including EBacc and creative subjects.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures the curriculum and subject choice themes evident in the keywords."
+  },
+  {
+    "topic": 25,
+    "suggested_name": "digital_technology_innovation",
+    "explanation": "This topic addresses educational technology, AI, digital tools, and innovation in classroom learning.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly captures the AI and educational technology focus in the keywords."
+  },
+  {
+    "topic": 26,
+    "suggested_name": "early_language_development",
+    "explanation": "This topic focuses on early language interventions, speech development, and communication skills in young children.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the early language intervention and development themes."
+  },
+  {
+    "topic": 27,
+    "suggested_name": "rshe_parent_relations",
+    "explanation": "This topic addresses relationships and sex education, parent involvement, and curriculum materials.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name captures both the RSHE curriculum focus and parent engagement aspects."
+  },
+  {
+    "topic": 28,
+    "suggested_name": "childcare_early_provision",
+    "explanation": "This topic covers childcare provision, funding, early years services, and family support.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the childcare and early years provision focus."
+  },
+  {
+    "topic": 29,
+    "suggested_name": "youth_justice_system",
+    "explanation": "This topic addresses youth justice, legal processes, family courts, and criminal justice reform.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name directly matches the clear youth justice system focus in the keywords."
+  }
+]

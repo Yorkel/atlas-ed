@@ -1,0 +1,212 @@
+[
+  {
+    "topic": 0,
+    "suggested_name": "child_family_welfare",
+    "explanation": "This topic focuses on children's wellbeing, family support, early years care, and addressing child poverty and vulnerability.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures the focus on children's welfare and family support systems evident in the keywords."
+  },
+  {
+    "topic": 1,
+    "suggested_name": "academy_oversight_management",
+    "explanation": "This topic covers academy financial management, local authority oversight, and education skills agency involvement.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures both the financial aspects and oversight mechanisms for academies shown in the keywords."
+  },
+  {
+    "topic": 2,
+    "suggested_name": "academy_trust_governance",
+    "explanation": "This topic centers on multi-academy trusts, their governance structures, financial management, and leadership including CEOs.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly matches the clear focus on academy trust structures and governance arrangements."
+  },
+  {
+    "topic": 3,
+    "suggested_name": "teacher_pay_awards",
+    "explanation": "This topic focuses on teacher pay rises, salary awards, pay conditions, and recommendations from the School Teachers' Review Body.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the clear focus on teacher compensation and pay-related issues."
+  },
+  {
+    "topic": 4,
+    "suggested_name": "ofsted_inspection_concerns",
+    "explanation": "This topic addresses Ofsted inspections, inspector deaths, complaints about the inspection process, and calls for reform.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name captures both the inspection focus and the reform agenda evident in keywords like 'death', 'complaint', and 'concern'."
+  },
+  {
+    "topic": 5,
+    "suggested_name": "gcse_exam_results",
+    "explanation": "This topic covers GCSE grades, exam results across subjects, pandemic impacts, and attainment gaps between different groups.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name directly matches the prominent focus on GCSE grades and examination results in the keywords."
+  },
+  {
+    "topic": 6,
+    "suggested_name": "disadvantaged_pupil_attainment",
+    "explanation": "This topic examines attainment gaps between disadvantaged pupils and their peers, including differences in progress and outcomes.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name precisely captures the focus on educational disadvantage and attainment disparities shown in the keywords."
+  },
+  {
+    "topic": 7,
+    "suggested_name": "dfe_warning_notices",
+    "explanation": "This topic covers warning notices issued by DfE regional directors to academies and schools following inadequate inspections.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name exactly matches the clear focus on DfE warning notices and regional director interventions."
+  },
+  {
+    "topic": 8,
+    "suggested_name": "send_council_deficits",
+    "explanation": "This topic addresses special educational needs provision, council deficits, safety valve agreements, and SEND system reform.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures both the SEND focus and the financial deficit issues facing councils evident in the keywords."
+  },
+  {
+    "topic": 9,
+    "suggested_name": "teacher_union_strikes",
+    "explanation": "This topic covers teacher union strike action, industrial disputes, ballot processes, and negotiations over pay and conditions.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly captures the focus on both teacher unions and strike action shown throughout the keywords."
+  },
+  {
+    "topic": 10,
+    "suggested_name": "apprenticeships_skills_training",
+    "explanation": "This topic focuses on apprenticeships, skills development, vocational training, and career opportunities for young people.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures the dual focus on apprenticeships and broader skills development evident in the keywords."
+  },
+  {
+    "topic": 11,
+    "suggested_name": "exam_regulation_ofqual",
+    "explanation": "This topic centers on Ofqual's role in exam regulation, qualification oversight, assessment arrangements, and exam board management.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects Ofqual's regulatory role and exam-focused responsibilities shown in the keywords."
+  },
+  {
+    "topic": 12,
+    "suggested_name": "raac_building_crisis",
+    "explanation": "This topic addresses the RAAC concrete crisis in school buildings, safety concerns, rebuilding programs, and estate management.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly captures the specific RAAC concrete crisis and building safety issues dominating the keywords."
+  },
+  {
+    "topic": 13,
+    "suggested_name": "school_attendance_absence",
+    "explanation": "This topic examines school attendance issues, persistent absence rates, pandemic impacts, and attendance tracking systems.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures the dual focus on both absence problems and attendance solutions evident in the keywords."
+  },
+  {
+    "topic": 14,
+    "suggested_name": "free_school_meals",
+    "explanation": "This topic covers free school meal provision, pupil premium eligibility, food poverty, and universal credit arrangements.",
+    "proposed_name_assessment": "CLOSE",
+    "proposed_name_note": "While free school meals is prominent, the topic also encompasses broader poverty issues that the proposed addition addresses."
+  },
+  {
+    "topic": 15,
+    "suggested_name": "education_politics_policy",
+    "explanation": "This topic focuses on political parties, education ministers, policy debates, and parliamentary discussions about education reform.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures the political and policy-making dimensions evident in the ministerial and party-focused keywords."
+  },
+  {
+    "topic": 16,
+    "suggested_name": "social_justice_research",
+    "explanation": "This topic addresses research projects focused on social justice, inequality, economic development, and evidence-based interventions.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the research focus and social justice themes prominent throughout the keywords."
+  },
+  {
+    "topic": 17,
+    "suggested_name": "leadership_appointments_roles",
+    "explanation": "This topic covers executive appointments, leadership roles, board positions, and senior management changes in education organizations.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures the focus on leadership positions and appointment processes evident in the keywords."
+  },
+  {
+    "topic": 18,
+    "suggested_name": "mental_health_wellbeing",
+    "explanation": "This topic addresses mental health support for young people, NHS services, wellbeing interventions, and health social care coordination.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name directly matches the prominent mental health and wellbeing themes throughout the keywords."
+  },
+  {
+    "topic": 19,
+    "suggested_name": "post16_technical_qualifications",
+    "explanation": "This topic covers post-16 qualifications, technical courses, BTECs, sixth form provision, and vocational pathways.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures the post-16 focus and qualification types evident in keywords like 'sixth form', 'btec', and 'technical qualification'."
+  },
+  {
+    "topic": 20,
+    "suggested_name": "primary_testing_assessment",
+    "explanation": "This topic focuses on key stage testing, SATs, primary assessment measures, and standardized testing including phonics checks.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures both the primary school focus and the SATs testing emphasis shown in the keywords."
+  },
+  {
+    "topic": 21,
+    "suggested_name": "safeguarding_complaints_issues",
+    "explanation": "This topic covers parent complaints, safeguarding concerns, legal cases, behavioral incidents, and investigation processes.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures both the safeguarding elements and complaint processes evident in keywords like 'abuse', 'investigation', and 'complaint'."
+  },
+  {
+    "topic": 22,
+    "suggested_name": "teacher_recruitment_retention",
+    "explanation": "This topic addresses teacher recruitment challenges, retention issues, training targets, workforce shortages, and professional development.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly matches the clear dual focus on both recruiting and retaining teachers shown throughout the keywords."
+  },
+  {
+    "topic": 23,
+    "suggested_name": "school_funding_budgets",
+    "explanation": "This topic covers school funding arrangements, budget pressures, financial cuts, spending allocations, and cost increases.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name directly captures the funding focus evident throughout keywords like 'funding', 'budget', 'cost', and 'spending'."
+  },
+  {
+    "topic": 24,
+    "suggested_name": "curriculum_subjects_content",
+    "explanation": "This topic addresses curriculum design, subject content, national curriculum requirements, and educational resources including Oak Academy.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures the curriculum focus and subject-specific content evident in the diverse subject keywords."
+  },
+  {
+    "topic": 25,
+    "suggested_name": "ofsted_report_judgments",
+    "explanation": "This topic covers Ofsted report cards, inspection judgments, grading systems, and accountability frameworks for school evaluation.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures the Ofsted report card system and judgment processes evident in keywords like 'report card' and 'judgment'."
+  },
+  {
+    "topic": 26,
+    "suggested_name": "breakfast_clubs_wraparound",
+    "explanation": "This topic focuses on breakfast club provision, early adopter programs, wraparound childcare, and extended school services.",
+    "proposed_name_assessment": "CLOSE",
+    "proposed_name_note": "While breakfast clubs is accurate, the topic includes broader wraparound care elements that could be reflected in the name."
+  },
+  {
+    "topic": 27,
+    "suggested_name": "educational_technology_ai",
+    "explanation": "This topic covers educational technology, AI tools in education, digital learning resources, and classroom innovation including ChatGPT.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures both the educational technology focus and the specific AI emphasis evident in keywords like 'ai tool' and 'chatgpt'."
+  },
+  {
+    "topic": 28,
+    "suggested_name": "school_places_capacity",
+    "explanation": "This topic addresses school place planning, capacity issues, pupil roll changes, and primary/secondary school provision across regions.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name directly matches the focus on school places and capacity planning evident throughout the keywords."
+  },
+  {
+    "topic": 29,
+    "suggested_name": "exclusions_suspensions_behaviour",
+    "explanation": "This topic covers school exclusions, suspension rates, behavioral management, and alternative provision for excluded pupils.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures the focus on both exclusions and suspensions as disciplinary measures shown in the keywords."
+  }
+]

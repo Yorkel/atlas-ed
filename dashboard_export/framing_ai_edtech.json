@@ -1,0 +1,255 @@
+{
+  "topic": "edtech_and_ai",
+  "election_date": "2024-07-04",
+  "pre_election": [
+    {
+      "article": 1,
+      "framing": "EQUITY",
+      "summary": "The article frames Sadiq Khan's free school meals extension as addressing disadvantage but highlights funding shortfalls that could burden schools."
+    },
+    {
+      "article": 2,
+      "framing": "EQUITY",
+      "summary": "The article frames the government funding increase for infant free school meals as inadequate to address the real costs faced by schools due to inflation."
+    },
+    {
+      "article": 3,
+      "framing": "EQUITY",
+      "summary": "The article frames Khan's extension of London primary free school meals as addressing access but warns of continued underfunding challenges."
+    },
+    {
+      "article": 4,
+      "framing": "EQUITY",
+      "summary": "The article frames school breakfast funding and free school meals expansion as necessary to address growing hunger among disadvantaged pupils."
+    },
+    {
+      "article": 5,
+      "framing": "EQUITY",
+      "summary": "The article frames the Liberal Democrats' free school meals policy as an unfunded aspiration to address poverty rather than a concrete commitment."
+    },
+    {
+      "article": 6,
+      "framing": "EQUITY",
+      "summary": "The article frames Newham's universal free school meals program as financially unsustainable due to underfunding and rising costs."
+    },
+    {
+      "article": 7,
+      "framing": "EQUITY",
+      "summary": "The article frames free school meals access for disabled pupils as a matter of reasonable adjustments and equal access rights."
+    },
+    {
+      "article": 8,
+      "framing": "EVIDENCE",
+      "summary": "The article frames London's free school meal rollout as an opportunity for independent research to evaluate the impact on educational outcomes."
+    },
+    {
+      "article": 9,
+      "framing": "EVIDENCE",
+      "summary": "The article frames the extension of universal free school meals in London as a data-driven opportunity to analyze educational impacts."
+    },
+    {
+      "article": 10,
+      "framing": "EQUITY",
+      "summary": "The article frames the rising number of children eligible for free school meals as evidence of increasing poverty and need for support."
+    },
+    {
+      "article": 11,
+      "framing": "EQUITY",
+      "summary": "The article frames the delay in free school meals funding decisions as problematic given the existing underfunding of the program."
+    },
+    {
+      "article": 12,
+      "framing": "EQUITY",
+      "summary": "The article frames widespread food insecurity among primary pupils as evidence supporting universal free school meals expansion."
+    },
+    {
+      "article": 13,
+      "framing": "REGULATION",
+      "summary": "The article frames the free schools policy as requiring renewed government focus and commitment due to bureaucratic obstacles and lack of innovation."
+    },
+    {
+      "article": 14,
+      "framing": "EQUITY",
+      "summary": "The article frames special schools' struggle with meal costs as highlighting funding inequities and rising costs disproportionately affecting vulnerable pupils."
+    },
+    {
+      "article": 15,
+      "framing": "EQUITY",
+      "summary": "The article frames Liberal Democrat school policies, including free meals expansion, as costly but necessary investments in addressing educational disadvantage."
+    },
+    {
+      "article": 16,
+      "framing": "EQUITY",
+      "summary": "The article frames the appointment of a poverty tsar and extended free meals as necessary government responses to address educational inequality."
+    },
+    {
+      "article": 17,
+      "framing": "EQUITY",
+      "summary": "The article frames Lewisham's opt-out approach to free school meals as successfully identifying eligible families and boosting funding for disadvantaged schools."
+    },
+    {
+      "article": 18,
+      "framing": "EQUITY",
+      "summary": "The article frames the Sutton Trust's recommendations for rebalanced funding and extended free meals as necessary to address class-based educational inequalities."
+    },
+    {
+      "article": 19,
+      "framing": "EQUITY",
+      "summary": "The article frames Khan's school meal scheme as facing funding shortfalls that will burden schools and potentially undermine access for disadvantaged pupils."
+    },
+    {
+      "article": 20,
+      "framing": "EQUITY",
+      "summary": "The article frames rising child poverty levels revealed in international studies as requiring urgent policy focus on addressing societal inequalities."
+    }
+  ],
+  "post_election": [
+    {
+      "article": 1,
+      "framing": "OPPORTUNITY",
+      "summary": "Minister expresses interest in learning from Khan's free school meals policy to inform future interventions despite current financial constraints."
+    },
+    {
+      "article": 2,
+      "framing": "OPPORTUNITY",
+      "summary": "Government announces expansion of free breakfast clubs targeting disadvantaged areas as investment in economic growth and relief for struggling families."
+    },
+    {
+      "article": 3,
+      "framing": "RISK",
+      "summary": "DfE's minimal 1p funding increase for infant free school meals fails to keep pace with rising food costs and wages, worsening school budget pressures."
+    },
+    {
+      "article": 4,
+      "framing": "OPPORTUNITY",
+      "summary": "Case study showcasing how a free breakfast club successfully launched wider wraparound childcare services at a primary school."
+    },
+    {
+      "article": 5,
+      "framing": "OPPORTUNITY",
+      "summary": "Example of how a school effectively integrates free breakfast clubs with existing paid wraparound care and additional activities."
+    },
+    {
+      "article": 6,
+      "framing": "OPPORTUNITY",
+      "summary": "Demonstrates successful partnership between a school and private childcare provider to deliver free breakfast clubs."
+    },
+    {
+      "article": 7,
+      "framing": "RISK",
+      "summary": "Schools face having to find \u00a3165m from teaching budgets to subsidise free school meals due to inadequate government funding."
+    },
+    {
+      "article": 8,
+      "framing": "OPPORTUNITY",
+      "summary": "Shows how a special school successfully organizes and staffs its free breakfast club with engaging activities for pupils."
+    },
+    {
+      "article": 9,
+      "framing": "OPPORTUNITY",
+      "summary": "Government celebrates rollout of free breakfast clubs as delivering manifesto commitment and supporting working parents with time and cost savings."
+    },
+    {
+      "article": 10,
+      "framing": "OPPORTUNITY",
+      "summary": "Highlights innovative approach of involving older pupils as 'breakfast club baristas' in delivering free breakfast provision."
+    },
+    {
+      "article": 11,
+      "framing": "RISK",
+      "summary": "Primary schools are pulling out of breakfast club trials or facing financial losses due to inadequate 67p per pupil funding rate."
+    },
+    {
+      "article": 12,
+      "framing": "OPPORTUNITY",
+      "summary": "Government increases breakfast club funding from 67p to 75p per pupil after listening to schools about inadequate rates and dropouts."
+    },
+    {
+      "article": 13,
+      "framing": "OPPORTUNITY",
+      "summary": "Government promotes breakfast club rollout as delivering manifesto promises and providing significant annual savings for families."
+    },
+    {
+      "article": 14,
+      "framing": "EVIDENCE",
+      "summary": "Research warns that free school meals data is becoming less useful for targeting support due to policy changes and diverse eligibility makeup."
+    },
+    {
+      "article": 15,
+      "framing": "OPPORTUNITY",
+      "summary": "DfE encourages schools to become early adopters of breakfast clubs programme to help understand implementation and support needs."
+    },
+    {
+      "article": 16,
+      "framing": "OPPORTUNITY",
+      "summary": "Government opens applications for breakfast club early adopters, framing the initiative as removing barriers and supporting families."
+    },
+    {
+      "article": 17,
+      "framing": "OPPORTUNITY",
+      "summary": "Government extends free school meals to all universal credit families while providing schools guidance on managing eligibility reviews."
+    },
+    {
+      "article": 18,
+      "framing": "COMMERCIAL",
+      "summary": "DfE seeks business sponsors for breakfast clubs to boost impact and provide promotional rights in return for support."
+    },
+    {
+      "article": 19,
+      "framing": "COMMERCIAL",
+      "summary": "Major supermarkets and food companies announced as sponsors providing discounted products and delivery for breakfast club scheme."
+    },
+    {
+      "article": 20,
+      "framing": "RISK",
+      "summary": "Despite 1p funding increase, infant free school meals rate remains far below actual costs, forcing schools to subsidise provision."
+    }
+  ],
+  "comparison": {
+    "pre_election": {
+      "OPPORTUNITY": 0,
+      "RISK": 0,
+      "REGULATION": 1,
+      "DISRUPTION": 0,
+      "EQUITY": 17,
+      "EVIDENCE": 2,
+      "COMMERCIAL": 0
+    },
+    "post_election": {
+      "OPPORTUNITY": 13,
+      "RISK": 4,
+      "REGULATION": 0,
+      "DISRUPTION": 0,
+      "EQUITY": 0,
+      "EVIDENCE": 1,
+      "COMMERCIAL": 2
+    },
+    "pre_pct": {
+      "OPPORTUNITY": 0.0,
+      "RISK": 0.0,
+      "REGULATION": 5.0,
+      "DISRUPTION": 0.0,
+      "EQUITY": 85.0,
+      "EVIDENCE": 10.0,
+      "COMMERCIAL": 0.0
+    },
+    "post_pct": {
+      "OPPORTUNITY": 65.0,
+      "RISK": 20.0,
+      "REGULATION": 0.0,
+      "DISRUPTION": 0.0,
+      "EQUITY": 0.0,
+      "EVIDENCE": 5.0,
+      "COMMERCIAL": 10.0
+    },
+    "shift": {
+      "OPPORTUNITY": 65.0,
+      "RISK": 20.0,
+      "REGULATION": -5.0,
+      "DISRUPTION": 0.0,
+      "EQUITY": -85.0,
+      "EVIDENCE": -5.0,
+      "COMMERCIAL": 10.0
+    }
+  }
+}

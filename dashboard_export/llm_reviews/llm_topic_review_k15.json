@@ -1,0 +1,107 @@
+[
+  {
+    "topic": 0,
+    "suggested_name": "child_family_wellbeing",
+    "explanation": "This topic focuses on child welfare, family support, mental health, and early years care including school-based interventions like breakfast clubs.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures both the child welfare focus and early years emphasis evident in the keywords."
+  },
+  {
+    "topic": 1,
+    "suggested_name": "academy_oversight_management",
+    "explanation": "This topic covers academy financial management, ESFA oversight, vocational training provision, and late information reporting.",
+    "proposed_name_assessment": "CLOSE",
+    "proposed_name_note": "While financial oversight is prominent, the topic also includes broader management assurance and vocational training elements."
+  },
+  {
+    "topic": 2,
+    "suggested_name": "academy_trust_leadership",
+    "explanation": "This topic centers on multi-academy trust governance, leadership structures, CEOs, boards, and school improvement within trust frameworks.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly captures the focus on academy trust structures and governance arrangements."
+  },
+  {
+    "topic": 3,
+    "suggested_name": "teacher_workforce_issues",
+    "explanation": "This topic addresses teacher recruitment, retention, training, workload, pay, and professional development challenges.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the dual focus on recruiting new teachers and retaining existing ones."
+  },
+  {
+    "topic": 4,
+    "suggested_name": "ofsted_inspection_concerns",
+    "explanation": "This topic covers Ofsted inspections, inspector judgments, complaints, and concerns about inspection processes including references to tragedy.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name captures both the Ofsted inspection focus and the reform context suggested by concerns and complaints."
+  },
+  {
+    "topic": 5,
+    "suggested_name": "gcse_results_performance",
+    "explanation": "This topic focuses on GCSE grades, subject performance, pandemic impacts, and attainment standards across different subjects.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures the focus on GCSE performance and grade-related outcomes."
+  },
+  {
+    "topic": 6,
+    "suggested_name": "pupil_attainment_gaps",
+    "explanation": "This topic examines key stage performance, attainment gaps between different groups, particularly disadvantaged pupils, and assessment measures.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures both the attainment focus and the disadvantage gap that features prominently."
+  },
+  {
+    "topic": 7,
+    "suggested_name": "dfe_warning_notices",
+    "explanation": "This topic covers DFE regional directors issuing warning notices to academies and trusts, often following inadequate Ofsted judgments.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately describes the DFE intervention mechanism of formal notices to underperforming institutions."
+  },
+  {
+    "topic": 8,
+    "suggested_name": "send_provision_deficits",
+    "explanation": "This topic addresses special educational needs provision, council deficits, EHCPs, mainstream inclusion, and the safety valve program.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name captures both the SEND focus and the financial deficit crisis affecting local authorities."
+  },
+  {
+    "topic": 9,
+    "suggested_name": "teacher_strikes_pay",
+    "explanation": "This topic covers teacher union industrial action, pay disputes, strike ballots, and negotiations with education unions like NEU.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the dual focus on pay disputes and resulting strike action."
+  },
+  {
+    "topic": 10,
+    "suggested_name": "skills_career_training",
+    "explanation": "This topic focuses on apprenticeships, vocational skills, career opportunities, employer engagement, and technical education pathways.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures the skills development and apprenticeship focus of this topic."
+  },
+  {
+    "topic": 11,
+    "suggested_name": "exam_regulation_ofqual",
+    "explanation": "This topic covers Ofqual's role in regulating exams, qualifications, assessment arrangements, and exam board oversight.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly captures Ofqual's regulatory role over examinations and qualifications."
+  },
+  {
+    "topic": 12,
+    "suggested_name": "raac_building_crisis",
+    "explanation": "This topic focuses specifically on the RAAC concrete crisis in school buildings, DFE responses, rebuilding programs, and safety concerns.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name precisely identifies the RAAC concrete crisis as the central focus of this topic."
+  },
+  {
+    "topic": 13,
+    "suggested_name": "attendance_persistent_absence",
+    "explanation": "This topic addresses school attendance issues, persistent absence rates, pandemic impacts, and attendance tracking systems.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures both general attendance issues and the specific persistent absence problem."
+  },
+  {
+    "topic": 14,
+    "suggested_name": "school_funding_meals",
+    "explanation": "This topic covers school funding, budget pressures, free school meals, spending allocations, and financial support programs.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively captures both the funding pressures and the specific focus on school meal provision."
+  }
+]

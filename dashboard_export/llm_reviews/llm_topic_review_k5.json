@@ -1,0 +1,37 @@
+[
+  {
+    "topic": 0,
+    "suggested_name": "student_support_services",
+    "explanation": "Keywords focus on councils, parents, young people, absence, family support, SEND, health, and attendance indicating comprehensive student welfare services.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately captures the welfare and inclusion aspects evident in keywords like SEND, family, health, absence, and attendance."
+  },
+  {
+    "topic": 1,
+    "suggested_name": "academy_financial_management",
+    "explanation": "Keywords emphasize academy funding, financial management, ESFA oversight, and education provider assurance indicating financial governance of academies.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name perfectly matches the strong focus on academy financial management, ESFA oversight, and assurance processes in the keywords."
+  },
+  {
+    "topic": 2,
+    "suggested_name": "academy_trust_warnings",
+    "explanation": "Keywords center on academy trusts, warning notices, regional directors, CEOs, and governance issues indicating regulatory interventions in academy trust management.",
+    "proposed_name_assessment": "CLOSE",
+    "proposed_name_note": "While governance is relevant, the keywords heavily emphasize warning notices and regulatory interventions rather than general governance structures."
+  },
+  {
+    "topic": 3,
+    "suggested_name": "teacher_pay_disputes",
+    "explanation": "Keywords focus on pay, unions, strikes, NEU, recruitment, retention, and pay rises indicating industrial relations and workforce compensation issues.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name effectively encompasses both the pay dispute elements and broader workforce challenges like recruitment and retention evident in the keywords."
+  },
+  {
+    "topic": 4,
+    "suggested_name": "ofsted_inspection_concerns",
+    "explanation": "Keywords emphasize Ofsted, inspections, grades, complaints, headteacher deaths, coroner, and specific inspectors indicating inspection process controversies.",
+    "proposed_name_assessment": "AGREE",
+    "proposed_name_note": "The proposed name accurately reflects the reform context suggested by keywords including complaints, concerns, deaths, and coroner references."
+  }
+]

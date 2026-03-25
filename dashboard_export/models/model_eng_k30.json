@@ -1,0 +1,655 @@
+{
+  "model_id": "nmf_eng_30",
+  "n_topics": 30,
+  "n_articles": 3943,
+  "metrics": {
+    "reconstruction_error": 53.1522,
+    "stability": 0.9663,
+    "mean_dominant_weight": 0.1299,
+    "max_dominant_weight": 0.3492
+  },
+  "topics": [
+    {
+      "topic_num": 0,
+      "name": "child_and_family_welfare",
+      "count": 60,
+      "pct": 1.5,
+      "top_source": "gov",
+      "top_source_pct": 0.47,
+      "single_source": false,
+      "top_keywords": [
+        "child",
+        "family",
+        "care",
+        "child school",
+        "early",
+        "education",
+        "life",
+        "need",
+        "school child",
+        "support"
+      ]
+    },
+    {
+      "topic_num": 1,
+      "name": "academy_finance_and_oversight",
+      "count": 149,
+      "pct": 3.8,
+      "top_source": "gov",
+      "top_source_pct": 0.99,
+      "single_source": true,
+      "top_keywords": [
+        "late information",
+        "late",
+        "local authority",
+        "authority",
+        "local",
+        "information action",
+        "authority education",
+        "provider html",
+        "action education",
+        "html"
+      ]
+    },
+    {
+      "topic_num": 2,
+      "name": "academy_trust_governance",
+      "count": 258,
+      "pct": 6.5,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.88,
+      "single_source": false,
+      "top_keywords": [
+        "trust",
+        "academy",
+        "academy trust",
+        "mat",
+        "ceo",
+        "trust school",
+        "school trust",
+        "chain",
+        "executive",
+        "chief executive"
+      ]
+    },
+    {
+      "topic_num": 3,
+      "name": "teacher_pay",
+      "count": 108,
+      "pct": 2.7,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.97,
+      "single_source": true,
+      "top_keywords": [
+        "pay",
+        "rise",
+        "strb",
+        "pay rise",
+        "teacher",
+        "award",
+        "support staff",
+        "offer",
+        "pay award",
+        "staff"
+      ]
+    },
+    {
+      "topic_num": 4,
+      "name": "ofsted_inspection_reform",
+      "count": 236,
+      "pct": 6.0,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.8,
+      "single_source": false,
+      "top_keywords": [
+        "inspection",
+        "inspector",
+        "ofsted",
+        "report",
+        "judgment",
+        "leader",
+        "watchdog",
+        "death",
+        "school inspection",
+        "report card"
+      ]
+    },
+    {
+      "topic_num": 5,
+      "name": "gcse_grades_and_results",
+      "count": 75,
+      "pct": 1.9,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.52,
+      "single_source": false,
+      "top_keywords": [
+        "grade",
+        "entry",
+        "gcse",
+        "subject",
+        "result",
+        "pandemic",
+        "math",
+        "pre pandemic",
+        "pre",
+        "gap"
+      ]
+    },
+    {
+      "topic_num": 6,
+      "name": "pupil_disadvantage_and_attainment",
+      "count": 117,
+      "pct": 3.0,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.52,
+      "single_source": false,
+      "top_keywords": [
+        "pupil",
+        "primary",
+        "secondary",
+        "school pupil",
+        "secondary school",
+        "disadvantaged",
+        "primary school",
+        "pupil school",
+        "likely",
+        "disadvantaged pupil"
+      ]
+    },
+    {
+      "topic_num": 7,
+      "name": "dfe_warning_notices",
+      "count": 82,
+      "pct": 2.1,
+      "top_source": "gov",
+      "top_source_pct": 0.96,
+      "single_source": true,
+      "top_keywords": [
+        "notice",
+        "warning notice",
+        "warning",
+        "dfe regional",
+        "regional director",
+        "regional",
+        "director",
+        "reason issue",
+        "notice warning",
+        "urn notice"
+      ]
+    },
+    {
+      "topic_num": 8,
+      "name": "send_and_council_deficits",
+      "count": 140,
+      "pct": 3.6,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.95,
+      "single_source": true,
+      "top_keywords": [
+        "council",
+        "send",
+        "deficit",
+        "special",
+        "need",
+        "ehcp",
+        "mainstream",
+        "special school",
+        "plan",
+        "local"
+      ]
+    },
+    {
+      "topic_num": 9,
+      "name": "teacher_strikes_and_unions",
+      "count": 128,
+      "pct": 3.2,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.96,
+      "single_source": true,
+      "top_keywords": [
+        "union",
+        "strike",
+        "member",
+        "ballot",
+        "action",
+        "neu",
+        "strike action",
+        "industrial",
+        "nasuwt",
+        "industrial action"
+      ]
+    },
+    {
+      "topic_num": 10,
+      "name": "apprenticeships_and_skills",
+      "count": 99,
+      "pct": 2.5,
+      "top_source": "gov",
+      "top_source_pct": 0.61,
+      "single_source": false,
+      "top_keywords": [
+        "skill",
+        "people",
+        "young",
+        "young people",
+        "opportunity",
+        "learner",
+        "education",
+        "career",
+        "life",
+        "future"
+      ]
+    },
+    {
+      "topic_num": 11,
+      "name": "ofqual_exam_regulation",
+      "count": 119,
+      "pct": 3.0,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.59,
+      "single_source": false,
+      "top_keywords": [
+        "ofqual",
+        "exam",
+        "regulator",
+        "chief regulator",
+        "qualification",
+        "board",
+        "exam board",
+        "gcse",
+        "assessment",
+        "ofqual chief"
+      ]
+    },
+    {
+      "topic_num": 12,
+      "name": "raac_building_crisis",
+      "count": 120,
+      "pct": 3.0,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.88,
+      "single_source": false,
+      "top_keywords": [
+        "raac",
+        "building",
+        "dfe",
+        "concrete",
+        "raac school",
+        "school building",
+        "school raac",
+        "estate",
+        "responsible body",
+        "rebuilding"
+      ]
+    },
+    {
+      "topic_num": 13,
+      "name": "school_absence_and_attendance",
+      "count": 87,
+      "pct": 2.2,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.47,
+      "single_source": false,
+      "top_keywords": [
+        "absence",
+        "persistent",
+        "persistent absence",
+        "session",
+        "absent",
+        "attendance",
+        "pandemic",
+        "illness",
+        "pupil",
+        "unauthorised"
+      ]
+    },
+    {
+      "topic_num": 14,
+      "name": "free_school_meals_and_poverty",
+      "count": 82,
+      "pct": 2.1,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.82,
+      "single_source": false,
+      "top_keywords": [
+        "funding",
+        "budget",
+        "cost",
+        "spending",
+        "financial",
+        "school funding",
+        "school budget",
+        "cash",
+        "government",
+        "cut"
+      ]
+    },
+    {
+      "topic_num": 15,
+      "name": "education_politics",
+      "count": 169,
+      "pct": 4.3,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.96,
+      "single_source": true,
+      "top_keywords": [
+        "labour",
+        "minister",
+        "education",
+        "government",
+        "party",
+        "secretary",
+        "phillipson",
+        "reform",
+        "education secretary",
+        "conservative"
+      ]
+    },
+    {
+      "topic_num": 16,
+      "name": "research_and_social_justice",
+      "count": 196,
+      "pct": 5.0,
+      "top_source": "nuffield",
+      "top_source_pct": 0.44,
+      "single_source": false,
+      "top_keywords": [
+        "research",
+        "foundation",
+        "report",
+        "justice",
+        "project",
+        "policy",
+        "uk",
+        "social",
+        "evidence",
+        "institute"
+      ]
+    },
+    {
+      "topic_num": 17,
+      "name": "leadership_appointments",
+      "count": 140,
+      "pct": 3.6,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.8,
+      "single_source": false,
+      "top_keywords": [
+        "role",
+        "education",
+        "chief",
+        "executive",
+        "director",
+        "chair",
+        "chief executive",
+        "board",
+        "ceo",
+        "job"
+      ]
+    },
+    {
+      "topic_num": 18,
+      "name": "mental_health_and_wellbeing",
+      "count": 69,
+      "pct": 1.7,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.77,
+      "single_source": false,
+      "top_keywords": [
+        "health",
+        "mental",
+        "mental health",
+        "support",
+        "service",
+        "nhs",
+        "health service",
+        "young",
+        "health support",
+        "staff"
+      ]
+    },
+    {
+      "topic_num": 19,
+      "name": "post16_qualifications",
+      "count": 153,
+      "pct": 3.9,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.56,
+      "single_source": false,
+      "top_keywords": [
+        "teacher",
+        "recruitment",
+        "teaching",
+        "retention",
+        "target",
+        "trainee",
+        "training",
+        "career",
+        "subject",
+        "workload"
+      ]
+    },
+    {
+      "topic_num": 20,
+      "name": "primary_assessment_and_sats",
+      "count": 120,
+      "pct": 3.0,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.57,
+      "single_source": false,
+      "top_keywords": [
+        "student",
+        "qualification",
+        "college",
+        "technical",
+        "course",
+        "result",
+        "btec",
+        "university",
+        "placement",
+        "technical qualification"
+      ]
+    },
+    {
+      "topic_num": 21,
+      "name": "safeguarding_and_complaints",
+      "count": 236,
+      "pct": 6.0,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.88,
+      "single_source": false,
+      "top_keywords": [
+        "parent",
+        "staff",
+        "complaint",
+        "behaviour",
+        "report",
+        "childcare",
+        "abuse",
+        "case",
+        "school parent",
+        "legal"
+      ]
+    },
+    {
+      "topic_num": 22,
+      "name": "teacher_recruitment_and_retention",
+      "count": 248,
+      "pct": 6.3,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.89,
+      "single_source": false,
+      "top_keywords": [
+        "tutoring",
+        "ntp",
+        "subsidy",
+        "national tutoring",
+        "tutor",
+        "dfe",
+        "tuition",
+        "cash",
+        "catch",
+        "gap"
+      ]
+    },
+    {
+      "topic_num": 23,
+      "name": "school_funding",
+      "count": 180,
+      "pct": 4.6,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.9,
+      "single_source": false,
+      "top_keywords": [
+        "apprenticeship",
+        "apprentice",
+        "employer",
+        "degree",
+        "training",
+        "skill",
+        "provider",
+        "route",
+        "levy",
+        "degree apprenticeship"
+      ]
+    },
+    {
+      "topic_num": 24,
+      "name": "curriculum_and_subjects",
+      "count": 137,
+      "pct": 3.5,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.7,
+      "single_source": false,
+      "top_keywords": [
+        "curriculum",
+        "subject",
+        "oak",
+        "art",
+        "language",
+        "assessment",
+        "knowledge",
+        "music",
+        "science",
+        "francis"
+      ]
+    },
+    {
+      "topic_num": 25,
+      "name": "ofsted_report_cards",
+      "count": 126,
+      "pct": 3.2,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.75,
+      "single_source": false,
+      "top_keywords": [
+        "ai",
+        "technology",
+        "tool",
+        "digital",
+        "teacher",
+        "use",
+        "education",
+        "lesson",
+        "edtech",
+        "student"
+      ]
+    },
+    {
+      "topic_num": 26,
+      "name": "breakfast_clubs",
+      "count": 43,
+      "pct": 1.1,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.65,
+      "single_source": false,
+      "top_keywords": [
+        "attendance",
+        "hub",
+        "school attendance",
+        "behaviour",
+        "support",
+        "improvement",
+        "government",
+        "hub school",
+        "dfe",
+        "pupil"
+      ]
+    },
+    {
+      "topic_num": 27,
+      "name": "edtech_and_ai",
+      "count": 93,
+      "pct": 2.4,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.61,
+      "single_source": false,
+      "top_keywords": [
+        "free",
+        "meal",
+        "club",
+        "breakfast",
+        "free school",
+        "school meal",
+        "breakfast club",
+        "food",
+        "free breakfast",
+        "poverty"
+      ]
+    },
+    {
+      "topic_num": 28,
+      "name": "school_places_and_capacity",
+      "count": 121,
+      "pct": 3.1,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.87,
+      "single_source": false,
+      "top_keywords": [
+        "test",
+        "key stage",
+        "stage",
+        "attainment",
+        "key",
+        "math",
+        "progress",
+        "result",
+        "measure",
+        "reading"
+      ]
+    },
+    {
+      "topic_num": 29,
+      "name": "exclusions_and_suspensions",
+      "count": 52,
+      "pct": 1.3,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.62,
+      "single_source": false,
+      "top_keywords": [
+        "suspension",
+        "exclusion",
+        "exclusion suspension",
+        "permanent exclusion",
+        "behaviour",
+        "permanent",
+        "pupil",
+        "suspension pupil",
+        "suspension exclusion",
+        "pupil suspension"
+      ]
+    }
+  ],
+  "run_id": "eng_2026-03-24_134826",
+  "run_metadata": {
+    "reconstruction_error": 53.16823879812919,
+    "n_docs": 3939,
+    "tfidf_max_features": 3000,
+    "tfidf_ngram_range": [
+      1,
+      2
+    ],
+    "nmf_init": "nndsvd",
+    "nmf_random_state": 42
+  }
+}
