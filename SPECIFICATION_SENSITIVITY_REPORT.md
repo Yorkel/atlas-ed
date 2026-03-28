@@ -54,9 +54,11 @@ Without media, the model finds institutional silos: the Education and Skills Fun
 
 One source — Schools Week — accounts for approximately 70% of the corpus. At k=30, nine of thirty topics have a single source contributing more than 90% of their content. At k=5, two of five topics exceed 90% single-source concentration (government at 99%, Schools Week at 92%), and all but one are dominated by a single publisher: the model discovers who publishes most, not what the policy landscape contains.
 
-This finding extended to retrieval-augmented generation (RAG). The same policy question asked against the full corpus and the no-media corpus produced different answers with different policy implications. The full-corpus answer was crisis-driven and politically contextualised, with seven of ten retrieved documents from Schools Week. The no-media answer was research-driven and structurally focused, with six of ten retrieved documents from the Education Policy Institute. The user had no way to know.
+The severity of this concentration is partly a function of the corpus composition. At a 70/30 source split, the model is almost mechanically forced to carve source-shaped clusters. A more balanced corpus — say, six sources each contributing 10–20% — would likely show lower single-source concentration. However, the underlying sensitivity would persist: any corpus has a composition, every composition is a choice, and that choice shapes what the model finds. The skew in this corpus makes the problem acute enough to measure precisely; it does not create the problem.
 
-*What this means: The "education debate" is an artefact of media, not a natural property of the system. Source composition doesn't just bias the findings — it determines whether the model surfaces a shared discourse or a collection of institutional monologues. Systems presenting "the main issues" are presenting the main issues according to whoever dominates the corpus.*
+An illustrative RAG comparison reinforced this finding. The same policy question asked against the full corpus and the no-media corpus produced different answers with different policy implications. The full-corpus answer was crisis-driven and politically contextualised, with seven of ten retrieved documents from Schools Week. The no-media answer was research-driven and structurally focused, with six of ten retrieved documents from the Education Policy Institute. The user had no way to know. This is a single-query illustration, not a systematic evaluation — but it demonstrates that the source composition effect extends beyond topic modelling to retrieval-based systems.
+
+*What this means: The "education debate" is an artefact of media, not a natural property of the system. Source composition doesn't just bias the findings — it determines whether the model surfaces a shared discourse or a collection of institutional monologues. The extreme skew in this corpus amplifies the effect, but the underlying mechanism — that corpus composition determines what the model can find — applies to any system built on curated document collections.*
 
 ---
 
@@ -80,7 +82,7 @@ These seven policy areas are not missing from the data. They are present in the 
 
 Smaller, specialist voices — the Fischer Family Trust, the Education Policy Institute, the Nuffield Foundation — never exceed 9% of any topic at k=5. At k=30, FFT becomes the plurality source for school absence (55%) and Nuffield leads research and social justice (53%) — both invisible at lower resolutions. The resolution parameter functions as a volume control for minority sources: lower resolution systematically silences them.
 
-Two topics survived every resolution tested: academy trust governance and Ofsted inspection reform. Both are anchored to distinct institutions with dedicated vocabulary, suggesting they reflect genuine structural features of the education system rather than artefacts of model configuration.
+Two topics survived every resolution tested: academy trust governance and Ofsted inspection reform. Both are anchored to distinct institutions with dedicated vocabulary. Their robustness could reflect genuine structural features of the education system — or it could reflect that NMF mechanically rewards topics with highly distinctive word sets, regardless of their structural significance. These topics use specialised vocabulary (trust, academy, MAT, regional director; inspection, Ofsted, report card, chief inspector) that separates cleanly from the rest of the corpus at any k. Topics with less distinctive vocabulary — even if they represent equally important policy areas — are more likely to merge or shift across configurations. The robustness of these topics is real, but the explanation may be methodological rather than substantive.
 
 *What this means: The choice of k is not a technical parameter. It is a decision about what counts as a finding. At low k, the model measures who publishes. At high k, it measures what they say about. Both pass standard evaluation. This is the most dangerous kind of specification sensitivity — not because it's the largest, but because it's invisible. The data contains the signal. The measurement definition hides it.*
 
@@ -92,7 +94,7 @@ Two topics survived every resolution tested: academy trust governance and Ofsted
 
 The most structurally concerning finding is that every standard diagnostic performed similarly across configurations that produced completely different outputs.
 
-Coherence (c_v) jumped from 0.598 at k=5 to 0.681 at k=15, then plateaued through k=50 (0.693). The metric cannot distinguish between 15 and 50 topics. A model with 5 topics — producing source proxies and a 49% catch-all — still returns a "usable" coherence score. Standard evaluation rewards simplicity, not analytical insight.
+Coherence (c_v) jumped from 0.598 at k=5 to 0.681 at k=15, then plateaued through k=50 (0.693). The metric cannot distinguish between 15 and 50 topics. This plateau is not a failure of coherence as a measure — coherence captures local word co-occurrence quality within topics, and that quality genuinely stabilises across this range. The problem is that coherence measures something different from what analysts typically assume: it rewards well-formed word clusters, not analytically useful findings. A model with 5 topics — producing source proxies and a 49% catch-all — still returns a "usable" coherence score because those source proxies have internally coherent vocabulary.
 
 Stability was perfect (1.0) at k=5 and k=15, dropping to 0.97 at k=30. But perfect stability at low k signals a model too simple to perturb — there is only one solution because the model lacks the complexity to have alternatives. Models that appeared most stable were those too simple to capture meaningful structure.
 
@@ -121,7 +123,7 @@ Across all tested configurations:
 
 **Structurally robust findings (act with confidence):**
 
-Academy trust governance and Ofsted inspection reform appeared in every tested specification — all resolution levels, with and without media. They are anchored to distinct institutions with dedicated vocabulary and likely reflect genuine structural features of the English education policy landscape. SEND and educational disadvantage appeared across most configurations, though they merged with other topics at low resolution. The pattern of institutional segmentation — government regulates, data organisations measure, think tanks argue, media connects — is itself a robust finding that appeared in every model comparison.
+Academy trust governance and Ofsted inspection reform appeared in every tested specification — all resolution levels, with and without media. They are anchored to distinct institutions with dedicated vocabulary. Their survival may reflect genuine structural features of the education system, or it may reflect that NMF mechanically preserves topics with highly distinctive word sets (see Scope and Limitations). Either way, they are the most specification-resistant findings in this analysis. SEND and educational disadvantage appeared across most configurations, though they merged with other topics at low resolution. The pattern of institutional segmentation — government regulates, data organisations measure, think tanks argue, media connects — is itself a robust finding that appeared in every model comparison.
 
 **Contingent findings (investigate further before acting):**
 
@@ -192,7 +194,7 @@ Require specification sensitivity testing as part of algorithmic transparency do
 
 ## Methodology
 
-**Model:** Non-negative Matrix Factorisation (NMF). Chosen because every specification choice is explicit and auditable — k is a parameter, vocabulary is defined by TF-IDF settings, per-article weights are inspectable, and the model is deterministic with NNDSVD initialisation. A BERTopic or LLM-based approach would bury specification choices inside embeddings, clustering algorithms, and prompts. HDBSCAN decides k for you — it cannot be perturbed the same way. Embeddings are opaque. Non-deterministic runs produce different topics. If specification choices change findings this much in a transparent model where every choice can be audited, they are doing at least as much in opaque models where they cannot.
+**Model:** Non-negative Matrix Factorisation (NMF). Chosen because every specification choice is explicit and auditable — k is a parameter, vocabulary is defined by TF-IDF settings, per-article weights are inspectable, and the model is deterministic with NNDSVD initialisation. A BERTopic or LLM-based approach would bury specification choices inside embeddings, clustering algorithms, and prompts. HDBSCAN decides k for you — it cannot be perturbed the same way. Embeddings are opaque. Non-deterministic runs produce different topics. Embedding-based models may be differently sensitive to specification choices — potentially less sensitive to k (since clustering is data-driven) but more sensitive to embedding model selection, chunk size, and preprocessing decisions that are harder to enumerate. The specification sensitivity demonstrated here on NMF is a lower bound on what can be measured, not necessarily a lower bound on what exists in more complex systems.
 
 **Corpus:** 3,939 English education policy articles (2023–2025) from six sources: Schools Week (2,741), GOV.UK (679), FFT Education Datalab (202), Education Policy Institute (111), Nuffield Foundation (106), Federation of Education Development (100). Four very short articles (<200 characters) were excluded during preprocessing.
 
@@ -201,6 +203,32 @@ Require specification sensitivity testing as part of algorithmic transparency do
 **Perturbations:** Two dimensions tested — k (5, 15, 30) and corpus composition (full vs no-media). Four model variants total. Each trained with identical preprocessing and NMF parameters. The only variables are k and corpus composition.
 
 **RAG comparison:** Two FAISS indexes built with sentence-transformer embeddings — one from the full corpus, one from the no-media corpus (1,198 articles). Same questions asked of both using Claude as the generation model.
+
+---
+
+## Scope and Limitations
+
+Not all findings in this report generalise equally. It is important to distinguish between findings that reflect properties of this specific corpus and findings that reflect structural properties of the method.
+
+**Corpus-specific findings (severity would decrease with a more balanced corpus):**
+
+The extreme single-source concentration in Finding 1 — nine of thirty topics above 90% from one publisher — is amplified by the 70/30 source split. A corpus with fifteen sources each contributing 5–10% would almost certainly show lower concentration per topic. The specific severity of the source composition effect is partly an artefact of the corpus available for English education policy analysis. However, the underlying mechanism (that source composition determines what the model finds) would persist at any split — the effect would be harder to detect, not absent.
+
+**Method-structural findings (would persist regardless of corpus size or composition):**
+
+The construct sensitivity in Finding 2 — that k determines what the model can distinguish — is a property of topic modelling, not of small or skewed datasets. A corpus of 100,000 articles would still collapse seven policy areas into one topic at k=5. The coherence plateau in Finding 3, and the inability of standard metrics to detect substantive differences between configurations, are properties of those metrics. More data will not make coherence able to distinguish between configurations that produce different policy conclusions.
+
+**Findings that could intensify with a larger corpus:**
+
+With more sources, the space of "equally defensible" corpus definitions expands. More inclusion/exclusion combinations become available to test, and the potential for source composition effects increases rather than decreases. What looks structurally robust in a six-source corpus might turn out to be contingent on which institutions happen to be included.
+
+**Temporal dynamics (not tested):**
+
+The corpus covers 2023–2025 — a period that includes a UK general election, the RAAC building safety crisis, and significant shifts in education policy. Topic distributions almost certainly shifted over time, and some specification sensitivity may interact with temporal dynamics: Schools Week's coverage priorities may have changed across this period, affecting which topics appear and when. Temporal sensitivity was not systematically tested in this analysis and represents a limitation of the current work.
+
+**Vocabulary distinctiveness and "robust" topics:**
+
+The two topics that survived every specification perturbation (academy trust governance, Ofsted inspection reform) use highly distinctive vocabulary that separates cleanly from the rest of the corpus. Their robustness may reflect NMF's mechanical tendency to preserve topics with unique word sets rather than genuine structural features of the education system. Further work could test this by measuring vocabulary overlap between topics and correlating it with cross-specification survival — if only low-overlap topics survive, the robustness is methodological rather than substantive.
 
 ---
 
