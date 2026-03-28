@@ -3,7 +3,7 @@
   "n_topics": 30,
   "n_articles": 1198,
   "metrics": {
-    "reconstruction_error": 26.3806,
+    "reconstruction_error": 26.3807,
     "stability": 0.9609,
     "mean_dominant_weight": 0.1946,
     "max_dominant_weight": 0.5817

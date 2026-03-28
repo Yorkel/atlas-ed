@@ -1,19 +1,19 @@
 {
   "model_id": "nmf_eng_5",
   "n_topics": 5,
-  "n_articles": 3943,
+  "n_articles": 3939,
   "metrics": {
-    "reconstruction_error": 58.2615,
+    "reconstruction_error": 58.2983,
     "stability": 1.0,
-    "mean_dominant_weight": 0.0922,
-    "max_dominant_weight": 0.3029
+    "mean_dominant_weight": 0.0896,
+    "max_dominant_weight": 0.2947
   },
   "topics": [
     {
       "topic_num": 0,
       "name": "pupil_welfare_and_inclusion",
-      "count": 1943,
-      "pct": 49.3,
+      "count": 1938,
+      "pct": 49.2,
       "top_source": "schoolsweek",
       "top_source_pct": 0.61,
       "single_source": false,
@@ -33,7 +33,7 @@
     {
       "topic_num": 1,
       "name": "academy_financial_oversight",
-      "count": 160,
+      "count": 162,
       "pct": 4.1,
       "top_source": "gov",
       "top_source_pct": 0.99,
@@ -54,10 +54,10 @@
     {
       "topic_num": 2,
       "name": "academy_trust_governance",
-      "count": 657,
-      "pct": 16.7,
+      "count": 740,
+      "pct": 18.8,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.79,
+      "top_source_pct": 0.8,
       "single_source": false,
       "top_keywords": [
         "trust",
@@ -75,11 +75,11 @@
     {
       "topic_num": 3,
       "name": "teacher_pay_and_workforce",
-      "count": 798,
-      "pct": 20.2,
+      "count": 389,
+      "pct": 9.9,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.92,
-      "single_source": true,
+      "top_source_pct": 0.82,
+      "single_source": false,
       "top_keywords": [
         "inspection",
         "inspector",
@@ -96,11 +96,11 @@
     {
       "topic_num": 4,
       "name": "ofsted_inspection_reform",
-      "count": 385,
-      "pct": 9.8,
+      "count": 710,
+      "pct": 18.0,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.81,
-      "single_source": false,
+      "top_source_pct": 0.92,
+      "single_source": true,
       "top_keywords": [
         "teacher",
         "pay",

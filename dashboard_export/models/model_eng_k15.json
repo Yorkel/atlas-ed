@@ -1,21 +1,21 @@
 {
   "model_id": "nmf_eng_15",
   "n_topics": 15,
-  "n_articles": 3943,
+  "n_articles": 3939,
   "metrics": {
-    "reconstruction_error": 55.2926,
+    "reconstruction_error": 55.4156,
     "stability": 1.0,
-    "mean_dominant_weight": 0.1216,
-    "max_dominant_weight": 0.3741
+    "mean_dominant_weight": 0.1199,
+    "max_dominant_weight": 0.3733
   },
   "topics": [
     {
       "topic_num": 0,
       "name": "child_welfare_and_early_years",
-      "count": 260,
-      "pct": 6.6,
+      "count": 250,
+      "pct": 6.3,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.58,
+      "top_source_pct": 0.55,
       "single_source": false,
       "top_keywords": [
         "child",
@@ -33,8 +33,8 @@
     {
       "topic_num": 1,
       "name": "academy_financial_oversight",
-      "count": 152,
-      "pct": 3.9,
+      "count": 149,
+      "pct": 3.8,
       "top_source": "gov",
       "top_source_pct": 0.99,
       "single_source": true,
@@ -54,8 +54,8 @@
     {
       "topic_num": 2,
       "name": "academy_trust_governance",
-      "count": 412,
-      "pct": 10.4,
+      "count": 391,
+      "pct": 9.9,
       "top_source": "schoolsweek",
       "top_source_pct": 0.91,
       "single_source": true,
@@ -75,10 +75,10 @@
     {
       "topic_num": 3,
       "name": "teacher_recruitment_and_retention",
-      "count": 411,
-      "pct": 10.4,
+      "count": 338,
+      "pct": 8.6,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.89,
+      "top_source_pct": 0.83,
       "single_source": false,
       "top_keywords": [
         "inspection",
@@ -96,10 +96,10 @@
     {
       "topic_num": 4,
       "name": "ofsted_inspection_reform",
-      "count": 350,
+      "count": 352,
       "pct": 8.9,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.82,
+      "top_source_pct": 0.89,
       "single_source": false,
       "top_keywords": [
         "teacher",
@@ -117,10 +117,10 @@
     {
       "topic_num": 5,
       "name": "gcse_attainment_and_grades",
-      "count": 130,
-      "pct": 3.3,
+      "count": 220,
+      "pct": 5.6,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.49,
+      "top_source_pct": 0.52,
       "single_source": false,
       "top_keywords": [
         "grade",
@@ -138,10 +138,10 @@
     {
       "topic_num": 6,
       "name": "pupil_attainment_and_disadvantage",
-      "count": 354,
-      "pct": 9.0,
+      "count": 285,
+      "pct": 7.2,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.61,
+      "top_source_pct": 0.53,
       "single_source": false,
       "top_keywords": [
         "absence",
@@ -159,11 +159,11 @@
     {
       "topic_num": 7,
       "name": "dfe_intervention_notices",
-      "count": 90,
-      "pct": 2.3,
-      "top_source": "gov",
-      "top_source_pct": 0.9,
-      "single_source": false,
+      "count": 260,
+      "pct": 6.6,
+      "top_source": "schoolsweek",
+      "top_source_pct": 0.94,
+      "single_source": true,
       "top_keywords": [
         "council",
         "send",
@@ -180,11 +180,11 @@
     {
       "topic_num": 8,
       "name": "send_and_council_deficits",
-      "count": 263,
-      "pct": 6.7,
-      "top_source": "schoolsweek",
-      "top_source_pct": 0.95,
-      "single_source": true,
+      "count": 98,
+      "pct": 2.5,
+      "top_source": "gov",
+      "top_source_pct": 0.88,
+      "single_source": false,
       "top_keywords": [
         "notice",
         "dfe regional",
@@ -201,7 +201,7 @@
     {
       "topic_num": 9,
       "name": "teacher_pay_and_strikes",
-      "count": 208,
+      "count": 207,
       "pct": 5.3,
       "top_source": "schoolsweek",
       "top_source_pct": 0.96,
@@ -222,10 +222,10 @@
     {
       "topic_num": 10,
       "name": "skills_and_apprenticeships",
-      "count": 479,
-      "pct": 12.1,
+      "count": 398,
+      "pct": 10.1,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.37,
+      "top_source_pct": 0.33,
       "single_source": false,
       "top_keywords": [
         "skill",
@@ -244,9 +244,9 @@
       "topic_num": 11,
       "name": "exam_regulation_and_ofqual",
       "count": 203,
-      "pct": 5.1,
+      "pct": 5.2,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.63,
+      "top_source_pct": 0.6,
       "single_source": false,
       "top_keywords": [
         "ofqual",
@@ -264,10 +264,10 @@
     {
       "topic_num": 12,
       "name": "raac_building_crisis",
-      "count": 203,
-      "pct": 5.1,
+      "count": 169,
+      "pct": 4.3,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.93,
+      "top_source_pct": 0.92,
       "single_source": true,
       "top_keywords": [
         "raac",
@@ -285,10 +285,10 @@
     {
       "topic_num": 13,
       "name": "school_absence_and_attendance",
-      "count": 130,
-      "pct": 3.3,
+      "count": 276,
+      "pct": 7.0,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.54,
+      "top_source_pct": 0.87,
       "single_source": false,
       "top_keywords": [
         "funding",
@@ -306,10 +306,10 @@
     {
       "topic_num": 14,
       "name": "school_funding_and_meals",
-      "count": 298,
-      "pct": 7.6,
+      "count": 343,
+      "pct": 8.7,
       "top_source": "schoolsweek",
-      "top_source_pct": 0.89,
+      "top_source_pct": 0.84,
       "single_source": false,
       "top_keywords": [
         "education",

@@ -35,7 +35,7 @@ def train_country(country: str) -> None:
         evaluate_coherence_over_topic_range,
         evaluate_topic_stability,
     )
-    from model_pipeline.training.s08_save_outputs import save_run_outputs, RUNS_DIR, make_run_id
+    from model_pipeline.training.s08_save_outputs import save_run_outputs, generate_summary_json, RUNS_DIR, make_run_id
     from model_pipeline.training.s09_mlflow_logging import log_run_to_mlflow
     from model_pipeline.training.s11_supabase_writer import write_topic_results
 
@@ -104,6 +104,20 @@ def train_country(country: str) -> None:
         W=nmf_out.W,
         coherence_df=coh_df,
         stability_df=stab_df,
+    )
+
+    # Summary JSON (for dashboard export)
+    mean_stability = float(stab_df["mean_pairwise_similarity"].mean()) if len(stab_df) > 0 else 1.0
+    summary_path = PROJECT_ROOT / "data" / "evaluation_outputs" / f"nmf_{country}_{n_topics}_summary.json"
+    generate_summary_json(
+        df_alloc=df_alloc,
+        model_id=f"nmf_{country}_{n_topics}",
+        topic_names=topic_names,
+        reconstruction_error=nmf_out.reconstruction_error,
+        stability=mean_stability,
+        mean_dominant_weight=float(nmf_out.W.max(axis=1).mean()),
+        max_dominant_weight=float(nmf_out.W.max(axis=1).max()),
+        out_path=summary_path,
     )
 
     # S09: MLflow (optional if installed)

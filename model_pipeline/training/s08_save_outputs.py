@@ -197,6 +197,65 @@ def save_run_outputs(
     return run_dir
 
 
+def generate_summary_json(
+    df_alloc: pd.DataFrame,
+    model_id: str,
+    topic_names: dict[int, str],
+    reconstruction_error: float,
+    stability: float,
+    mean_dominant_weight: float,
+    max_dominant_weight: float,
+    out_path: Path,
+) -> Path:
+    """
+    Generate a dashboard-ready summary JSON from the pipeline's topic-allocated DataFrame.
+
+    This replaces the notebook-generated summary JSONs, ensuring the summary
+    matches the pipeline's preprocessing (correct article count, correct assignments).
+    """
+    topic_data = []
+    n_topics = len(topic_names)
+
+    for i in range(n_topics):
+        mask = df_alloc["topic_num"] == i
+        count = int(mask.sum())
+        if count > 0:
+            source_counts = df_alloc.loc[mask, "source"].value_counts()
+            top_source = source_counts.index[0]
+            top_source_pct = round(float(source_counts.iloc[0] / source_counts.sum()), 2)
+        else:
+            top_source = "unknown"
+            top_source_pct = 0.0
+
+        topic_data.append({
+            "topic_num": i,
+            "name": topic_names.get(i, f"topic_{i}"),
+            "count": count,
+            "pct": round(count / len(df_alloc) * 100, 1),
+            "top_source": top_source,
+            "top_source_pct": top_source_pct,
+            "single_source": top_source_pct > 0.90,
+        })
+
+    summary = {
+        "model_id": model_id,
+        "n_topics": n_topics,
+        "n_articles": len(df_alloc),
+        "metrics": {
+            "reconstruction_error": round(reconstruction_error, 4),
+            "stability": round(stability, 4),
+            "mean_dominant_weight": round(mean_dominant_weight, 4),
+            "max_dominant_weight": round(max_dominant_weight, 4),
+        },
+        "topics": topic_data,
+    }
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    _write_json(summary, out_path)
+    logger.info("Wrote summary JSON: %s (%d articles, %d topics)", out_path, len(df_alloc), n_topics)
+    return out_path
+
+
 def main() -> None:
     import logging
 
