@@ -66,7 +66,7 @@ An illustrative RAG comparison reinforced this finding. The same policy question
 
 *Component: Construct — how the measurement is defined*
 
-Increasing from 5 to 30 topics preserved only 6% of topic content (Jaccard similarity: 0.06). The model at k=5 and the model at k=30 are not measuring the same things at different levels of detail. They are measuring fundamentally different things.
+Increasing from 5 to 30 topics preserved only 6% of topic names (Jaccard similarity: 0.06, computed over exact name matches as described in the Jaccard section below). The model at k=5 and the model at k=30 are not measuring the same things at different levels of detail. They are measuring fundamentally different things.
 
 At k=5, a single catch-all topic absorbs 49% of the corpus. This topic contains school absence, free school meals, mental health, exclusions, SEND, primary assessment, and disadvantage gaps — seven substantively distinct policy areas collapsed into one undifferentiated mass. At k=30, that single topic splits into eight distinct themes, each with its own source profile, temporal trajectory, and policy implications.
 
@@ -168,6 +168,8 @@ The splitting pattern follows the actual structure of education policy, not rand
 | k=15 vs k=30 | 0.15 | 6 / 39 | Six stable topics anchored to institutions |
 | k=30 vs k=30 NM | 0.07 | 4 / 56 | Same k, different corpus — 93% change |
 
+Jaccard similarity here is computed over exact topic name matches — two topics are "shared" only if they have the identical human-assigned label across configurations. This is a conservative measure: topics with overlapping content but different names (e.g., `school_absence_and_attendance` vs `pupil_absence_attendance`) are counted as different. The Jaccard values are low enough that even a more generous matching criterion (substring overlap, semantic similarity) would not change the core finding, but exact matching was chosen for reproducibility and to avoid introducing a subjective similarity threshold.
+
 The only topics that survive every perturbation are those anchored to specific institutions (Ofsted, academy trusts, DfE). Everything else — the policy substance a policymaker would act on — is contingent on specification choices.
 
 ---
@@ -194,7 +196,7 @@ Require specification sensitivity testing as part of algorithmic transparency do
 
 ## Methodology
 
-**Model:** Non-negative Matrix Factorisation (NMF). Chosen because every specification choice is explicit and auditable — k is a parameter, vocabulary is defined by TF-IDF settings, per-article weights are inspectable, and the model is deterministic with NNDSVD initialisation. A BERTopic or LLM-based approach would bury specification choices inside embeddings, clustering algorithms, and prompts. HDBSCAN decides k for you — it cannot be perturbed the same way. Embeddings are opaque. Non-deterministic runs produce different topics. Embedding-based models may be differently sensitive to specification choices — potentially less sensitive to k (since clustering is data-driven) but more sensitive to embedding model selection, chunk size, and preprocessing decisions that are harder to enumerate. The specification sensitivity demonstrated here on NMF is a lower bound on what can be measured, not necessarily a lower bound on what exists in more complex systems.
+**Model:** Non-negative Matrix Factorisation (NMF). Chosen because every specification choice is explicit and auditable — k is a parameter, vocabulary is defined by TF-IDF settings, per-article weights are inspectable, and the model is deterministic with NNDSVD initialisation. A BERTopic or LLM-based approach would bury specification choices inside embeddings, clustering algorithms, and prompts. HDBSCAN decides k for you — it cannot be perturbed the same way. Embeddings are opaque. Non-deterministic runs produce different topics. Embedding-based models may be differently sensitive to specification choices — potentially less sensitive to k (since clustering is data-driven) but more sensitive to embedding model selection, chunk size, and preprocessing decisions that are harder to enumerate. Crucially, the specification sensitivity framework used here — perturb one choice, hold the rest constant, compare outputs — is not NMF-specific. The same approach could be applied to BERTopic (perturb embedding model, clustering parameters, or corpus composition) or to RAG systems (perturb retrieval strategy, chunk size, or generation model). The specification sensitivity demonstrated here on NMF is a lower bound on what can be measured in a transparent system, not necessarily a lower bound on what exists in more complex ones.
 
 **Corpus:** 3,939 English education policy articles (2023–2025) from six sources: Schools Week (2,741), GOV.UK (679), FFT Education Datalab (202), Education Policy Institute (111), Nuffield Foundation (106), Federation of Education Development (100). Four very short articles (<200 characters) were excluded during preprocessing.
 
@@ -224,7 +226,7 @@ With more sources, the space of "equally defensible" corpus definitions expands.
 
 **Temporal dynamics (not tested):**
 
-The corpus covers 2023–2025 — a period that includes a UK general election, the RAAC building safety crisis, and significant shifts in education policy. Topic distributions almost certainly shifted over time, and some specification sensitivity may interact with temporal dynamics: Schools Week's coverage priorities may have changed across this period, affecting which topics appear and when. Temporal sensitivity was not systematically tested in this analysis and represents a limitation of the current work.
+The corpus covers 2023–2025 — a period that includes a UK general election, the RAAC building safety crisis, and significant shifts in education policy. Topic distributions almost certainly shifted over time, and some specification sensitivity may interact with temporal dynamics. In particular, because Schools Week accounts for 70% of the corpus, temporal shifts in one outlet's editorial priorities could appear as temporal shifts in the policy landscape — a particularly sharp instance of the domain-construct interaction that this framework is designed to surface. Temporal sensitivity was not systematically tested in this analysis and represents a limitation of the current work.
 
 **Vocabulary distinctiveness and "robust" topics:**
 
@@ -234,6 +236,8 @@ The two topics that survived every specification perturbation (academy trust gov
 
 ## Towards a Specification Sensitivity Standard
 
+The following is a preliminary proposal, derived from one model type (NMF), one domain (education policy), and one corpus composition (heavily skewed towards a single media source). It is offered as a starting point for discussion, not as a validated standard. Whether these components generalise — across model architectures, corpus sizes, domain types, and deployment contexts — remains an open question that requires structured investigation.
+
 This project proposes five components for specification transparency in AI systems:
 
 1. **Perturbation registry.** Document at least three specification choices that could have been made differently. For each, train or run a variant.
@@ -241,6 +245,8 @@ This project proposes five components for specification transparency in AI syste
 3. **Diagnostic sufficiency test.** Check whether evaluation metrics detect the perturbation. If two variants score similarly but produce different outputs, diagnostics are insufficient.
 4. **Confidence disclosure.** Every output shown to a user should carry a confidence measure (dominant weight, prompt sensitivity, retrieval coverage).
 5. **Specification card.** Like a model card, but documenting the space of models that were not deployed and what they would have found differently. A model card says "we trained NMF at k=30 on 3,939 articles, coherence 0.689, stability 0.97." A specification card says "we also trained at k=5, k=15, and k=30 without media — here is what changed, here is what the diagnostics could not detect, and here is which findings are robust vs contingent on the choices we made."
+
+These components emerged from a single case study. Developing them into a usable standard would require structured specification sensitivity analyses across a range of conditions — different model types (embedding-based clustering, LDA, LLM-based classification), different corpus compositions (balanced vs skewed, small vs large), different domains (health, justice, climate), and different deployment contexts (analytical tools vs user-facing chatbots vs automated decision systems). Each axis is likely to surface different specification sensitivities with different risk profiles. The three-component lens (domain, construct, frame) may prove useful across these contexts, or it may need to be extended. The current work demonstrates the principle and provides one worked example; the standard itself requires broader empirical grounding.
 
 ---
 
