@@ -158,7 +158,7 @@ def load_models(sb: Client) -> None:
             "corpus_type": mapping["corpus_type"],
         }
 
-        sb.table("atlased_models").upsert(model_record).execute()
+        sb.table("atlased_models").upsert(model_record, on_conflict="model_id").execute()
         print(f"  {mapping['model_id']} -> run_id: {mapping['run_id']}")
 
         # Insert topics
@@ -179,7 +179,7 @@ def load_models(sb: Client) -> None:
         if topics_batch:
             # Upsert in chunks to avoid payload limits
             for i in range(0, len(topics_batch), 50):
-                sb.table("atlased_topics").upsert(topics_batch[i:i + 50]).execute()
+                sb.table("atlased_topics").upsert(topics_batch[i:i + 50], on_conflict="model_id,topic_num").execute()
             print(f"  Loaded {len(topics_batch)} topics")
 
 
@@ -205,12 +205,12 @@ def load_timeseries(sb: Client) -> None:
         })
 
         if len(batch) >= 500:
-            sb.table("atlased_topic_timeseries").upsert(batch).execute()
+            sb.table("atlased_topic_timeseries").upsert(batch, on_conflict="model_id,topic_num,year,month").execute()
             print(f"  Loaded {len(batch)} records")
             batch = []
 
     if batch:
-        sb.table("atlased_topic_timeseries").upsert(batch).execute()
+        sb.table("atlased_topic_timeseries").upsert(batch, on_conflict="model_id,topic_num,year,month").execute()
         print(f"  Loaded {len(batch)} records")
 
     print(f"  Total: {len(df)} timeseries rows")
@@ -254,7 +254,7 @@ def load_rag_contexts(sb: Client) -> None:
         })
 
     if batch:
-        sb.table("atlased_rag_contexts").upsert(batch).execute()
+        sb.table("atlased_rag_contexts").upsert(batch, on_conflict="corpus_type,question").execute()
         print(f"  Loaded {len(batch)} contexts ({len(questions)} questions x 2 corpora)")
 
 
