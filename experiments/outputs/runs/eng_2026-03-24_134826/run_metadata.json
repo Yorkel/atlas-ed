@@ -1,0 +1,26 @@
+{
+  "run_id": "eng_2026-03-24_134826",
+  "created_utc": "2026-03-24T13:59:14+00:00",
+  "dataset_name": "eng_training",
+  "n_docs": 3939,
+  "tfidf_shape": [
+    3939,
+    3000
+  ],
+  "tfidf_min_df": 3,
+  "tfidf_max_df": 0.85,
+  "tfidf_max_features": 3000,
+  "tfidf_ngram_range": [
+    1,
+    2
+  ],
+  "tfidf_vocab_size": 3000,
+  "nmf_n_topics": 30,
+  "nmf_init": "nndsvd",
+  "nmf_random_state": 42,
+  "nmf_max_iter": 1000,
+  "reconstruction_error": 53.16823879812919,
+  "dominant_topic_weight_min": 0.010347257500781425,
+  "dominant_topic_weight_mean": 0.12489893594878991,
+  "dominant_topic_weight_max": 0.40101653389685354
+}

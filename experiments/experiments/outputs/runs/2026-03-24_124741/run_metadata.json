@@ -1,0 +1,21 @@
+{
+  "run_id": "2026-03-24_124741",
+  "n_articles": 3943,
+  "n_topics": 30,
+  "init": "nndsvd",
+  "random_state": 42,
+  "max_iter": 1000,
+  "reconstruction_error": 53.15223632519479,
+  "tfidf_min_df": 3,
+  "tfidf_max_df": 0.85,
+  "tfidf_max_features": 3000,
+  "tfidf_ngram_range": [
+    1,
+    2
+  ],
+  "vocabulary_size": 3000,
+  "coherence_cv_k30": 0.6902,
+  "topic_stability": 0.9663099588067896,
+  "corpus": "eng_training_3943_supabase",
+  "note": "Retrained after removing 29 HE articles. Topics shuffled indices vs previous run."
+}

@@ -1,0 +1,26 @@
+{
+  "run_id": "sco_2026-03-24_135938",
+  "created_utc": "2026-03-24T14:00:37+00:00",
+  "dataset_name": "sco_training",
+  "n_docs": 482,
+  "tfidf_shape": [
+    482,
+    2000
+  ],
+  "tfidf_min_df": 3,
+  "tfidf_max_df": 0.85,
+  "tfidf_max_features": 2000,
+  "tfidf_ngram_range": [
+    1,
+    2
+  ],
+  "tfidf_vocab_size": 2000,
+  "nmf_n_topics": 15,
+  "nmf_init": "nndsvd",
+  "nmf_random_state": 42,
+  "nmf_max_iter": 1000,
+  "reconstruction_error": 19.20780598485878,
+  "dominant_topic_weight_min": 0.03489859939260322,
+  "dominant_topic_weight_mean": 0.19131916055427295,
+  "dominant_topic_weight_max": 0.608700302030346
+}

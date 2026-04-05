@@ -1,0 +1,26 @@
+{
+  "run_id": "irl_2026-03-24_140040",
+  "created_utc": "2026-03-24T14:02:10+00:00",
+  "dataset_name": "irl_training",
+  "n_docs": 586,
+  "tfidf_shape": [
+    586,
+    2000
+  ],
+  "tfidf_min_df": 3,
+  "tfidf_max_df": 0.85,
+  "tfidf_max_features": 2000,
+  "tfidf_ngram_range": [
+    1,
+    2
+  ],
+  "tfidf_vocab_size": 2000,
+  "nmf_n_topics": 15,
+  "nmf_init": "nndsvd",
+  "nmf_random_state": 42,
+  "nmf_max_iter": 1000,
+  "reconstruction_error": 21.043515117546963,
+  "dominant_topic_weight_min": 0.02039997430093378,
+  "dominant_topic_weight_mean": 0.20204631536236206,
+  "dominant_topic_weight_max": 0.4881838471070558
+}
